@@ -12,9 +12,15 @@
   "app": {
     "windows": [
       {
-        "title": "nami",
-        "width": 800,
-        "height": 600
+        "title": "Nami",
+        "width": 1200,
+        "height": 800,
+        "decorations": false,
+        "resizable": true,
+        "center": true,
+        "minWidth": 400,
+        "minHeight": 500,
+        "maximized": true
       }
     ],
     "security": {
