@@ -3,11 +3,24 @@ import { Minus, X, Maximize2, Minimize2, Flower2 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const TitleBar = () => {
-    const appWindow = getCurrentWindow();
+    const [appWindow, setAppWindow] = useState<any>(null);
+
+    useEffect(() => {
+        // @ts-ignore
+        if (typeof window !== 'undefined' && window.__TAURI_INTERNALS__) {
+            try {
+                setAppWindow(getCurrentWindow());
+            } catch (e) {
+                console.error("Failed to get Tauri window context:", e);
+            }
+        }
+    }, []);
     const [isMaximized, setIsMaximized] = useState(false);
 
     // Check initial maximized state and listen for changes
     useEffect(() => {
+        if (!appWindow) return;
+
         const checkMaximized = async () => {
             const maximized = await appWindow.isMaximized();
             setIsMaximized(maximized);
@@ -22,15 +35,16 @@ const TitleBar = () => {
         });
 
         return () => {
-            unlisten.then(fn => fn());
+            unlisten.then((fn: any) => fn());
         };
     }, [appWindow]);
 
     const handleMinimize = async () => {
-        await appWindow.minimize();
+        if (appWindow) await appWindow.minimize();
     };
 
     const handleMaximize = async () => {
+        if (!appWindow) return;
         const maximized = await appWindow.isMaximized();
         if (maximized) {
             await appWindow.unmaximize();
@@ -41,8 +55,10 @@ const TitleBar = () => {
     };
 
     const handleClose = async () => {
-        await appWindow.close();
+        if (appWindow) await appWindow.close();
     };
+
+    if (!appWindow) return null;
 
     return (
         <header className="titlebar">
