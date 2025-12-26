@@ -182,3 +182,47 @@ export function subscribeToMessages(
     supabase.removeChannel(channel);
   };
 }
+
+export function subscribeToAllIncomingMessages(
+  userId: string,
+  onNewMessage: (message: MessageWithAttachments) => void
+) {
+  const handleNewMessage = async (message: Message) => {
+    // Fetch attachments/sender info if needed, but for notification just body is enough
+    // We might want to fetch sender name though.
+    // For now, let's just return the message and let the UI fetch details or use a simpler object.
+    // Actually, to show sender name, we need it.
+
+    // Fetch attachments
+    const { data: attachments } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('message_id', message.id);
+
+    onNewMessage({
+      ...message,
+      attachments: (attachments as Attachment[]) || [],
+    });
+  };
+
+  const channel = supabase
+    .channel('global-messages-channel')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `receiver_id=eq.${userId}`,
+      },
+      (payload) => {
+        const newMessage = payload.new as Message;
+        handleNewMessage(newMessage);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}

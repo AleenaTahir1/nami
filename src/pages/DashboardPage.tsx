@@ -7,13 +7,19 @@ import {
 } from 'lucide-react';
 import { useContacts } from '../hooks/useContacts';
 import { useMessages } from '../hooks/useMessages';
+import { useNotifications } from '../hooks/useNotifications';
+import { isAppFocused } from '../lib/notifications';
+import { subscribeToAllIncomingMessages } from '../lib/messages';
 import { useContactsPresence } from '../hooks/useContactsPresence';
 import { useAuth } from '../contexts/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { AddContactModal } from '../components/AddContactModal';
 import { MessageContextMenu } from '../components/MessageContextMenu';
 import { ContactRequestsModal } from '../components/ContactRequestsModal';
+import { EmojiPicker } from '../components/EmojiPicker';
+import { MessageWithEmojis } from '../components/MessageWithEmojis';
 import type { Profile, Attachment } from '../lib/supabase-types';
+import type { EmojiData } from '../lib/emoji-data';
 import { getAttachmentUrl, formatFileSize, getFileIcon } from '../lib/attachments';
 
 // Attachment Display Component
@@ -97,6 +103,7 @@ const DashboardPage = () => {
     const [showAttachMenu, setShowAttachMenu] = useState(false);
     const [showAddContact, setShowAddContact] = useState(false);
     const [showRequests, setShowRequests] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [fileAcceptType, setFileAcceptType] = useState<string>('*');
     const attachMenuRef = useRef<HTMLDivElement>(null);
@@ -105,7 +112,7 @@ const DashboardPage = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { contacts, requests, loading, requestsLoading, addContact, searchUsers, acceptRequest, declineRequest } = useContacts();
-    const { messages, loading: messagesLoading, sending, sendMessage, deleteMessageForMe, editMessage, messagesEndRef, getMessageStatus, loadMore, hasMore, loadingMore, clearChat } = useMessages(selectedContact?.user_id || null);
+    const { messages, loading: messagesLoading, sending, sendMessage: sendChatMessage, deleteMessageForMe, editMessage, messagesEndRef, getMessageStatus, loadMore, hasMore, loadingMore, clearChat } = useMessages(selectedContact?.user_id || null);
     const { isOnline, getLastSeen } = useContactsPresence(contacts.map(c => c.user_id));
 
     // Context menu state
@@ -125,6 +132,8 @@ const DashboardPage = () => {
 
     const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
     const headerMenuRef = useRef<HTMLDivElement>(null);
+    const { notify, settings: notificationSettings } = useNotifications();
+    const contactsRef = useRef<Profile[]>(contacts); // Ref to access current contacts in callback
 
     // Close header menu when clicking outside
     useEffect(() => {
@@ -183,6 +192,50 @@ const DashboardPage = () => {
         }
     }, [selectedContact]);
 
+    // Update contacts ref when contacts change
+    useEffect(() => {
+        contactsRef.current = contacts;
+    }, [contacts]);
+
+    // Handle global notifications
+    useEffect(() => {
+        if (!user) return;
+
+        const unsubscribe = subscribeToAllIncomingMessages(user.id, async (newMessage) => {
+            // Don't notify for own messages
+            if (newMessage.sender_id === user.id) return;
+
+            // Check if app is focused
+            const focused = await isAppFocused();
+            if (focused) return;
+
+            // Find sender name
+            const sender = contactsRef.current.find(c => c.user_id === newMessage.sender_id);
+            const senderName = sender?.display_name || 'New Message';
+
+            // Prepare notification body
+            let body = 'Sent an attachment';
+            if (newMessage.content && newMessage.content !== '📎 Attachment') {
+                body = notificationSettings.preview ? newMessage.content : 'New message received';
+            } else if (newMessage.attachments && newMessage.attachments.length > 0) {
+                body = 'Sent an attachment';
+            }
+
+            // Truncate long messages
+            if (body.length > 100) {
+                body = body.substring(0, 100) + '...';
+            }
+
+            // Show notification
+            notify({
+                title: senderName,
+                body: body,
+            });
+        });
+
+        return unsubscribe;
+    }, [user, notify, notificationSettings.preview]);
+
     // Close attach menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -199,7 +252,7 @@ const DashboardPage = () => {
         // Allow sending if there's text OR files (or both)
         if ((messageInput.trim() || selectedFiles.length > 0) && !sending) {
             try {
-                await sendMessage(messageInput.trim(), selectedFiles);
+                await sendChatMessage(messageInput.trim(), selectedFiles);
                 setMessageInput('');
                 setSelectedFiles([]);
             } catch (error) {
@@ -239,6 +292,11 @@ const DashboardPage = () => {
 
     const removeFile = (index: number) => {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const handleEmojiSelect = (emoji: EmojiData) => {
+        // Insert emoji unicode at cursor position or append to message
+        setMessageInput((prev) => prev + emoji.unicode);
     };
 
 
@@ -615,19 +673,31 @@ const DashboardPage = () => {
                                                 <div className="message-content">
                                                     <div className="message-bubble" style={{ fontStyle: isDeleted ? 'italic' : 'normal' }}>
                                                         {isEditing ? (
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '0.75rem',
+                                                                width: '100%',
+                                                                minWidth: '500px',
+                                                                maxWidth: '800px'
+                                                            }}>
                                                                 <textarea
                                                                     value={editContent}
                                                                     onChange={(e) => setEditContent(e.target.value)}
+                                                                    rows={Math.max(3, Math.ceil(editContent.length / 50))}
                                                                     style={{
                                                                         width: '100%',
-                                                                        minHeight: '60px',
-                                                                        padding: '0.5rem',
-                                                                        border: '1px solid rgba(255,255,255,0.3)',
-                                                                        borderRadius: '0.5rem',
-                                                                        background: 'var(--bg-secondary)',
-                                                                        color: 'inherit',
-                                                                        resize: 'none',
+                                                                        padding: '0.75rem',
+                                                                        border: '2px solid var(--primary)',
+                                                                        borderRadius: '0.75rem',
+                                                                        background: isSent
+                                                                            ? 'rgba(157, 23, 77, 0.1)'
+                                                                            : 'rgba(255, 255, 255, 0.05)',
+                                                                        color: 'var(--text-primary)',
+                                                                        fontSize: '0.9375rem',
+                                                                        fontFamily: 'inherit',
+                                                                        lineHeight: '1.5',
+                                                                        resize: 'vertical',
                                                                         outline: 'none',
                                                                     }}
                                                                     autoFocus
@@ -640,12 +710,46 @@ const DashboardPage = () => {
                                                                     }}
                                                                 />
                                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                                    <button onClick={handleCancelEdit} style={{ padding: '0.25rem 0.75rem', background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', cursor: 'pointer', color: 'inherit', fontSize: '0.75rem' }}>Cancel</button>
-                                                                    <button onClick={handleSaveEdit} style={{ padding: '0.25rem 0.75rem', background: 'var(--primary)', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', color: 'white', fontSize: '0.75rem', fontWeight: 600 }}>Save</button>
+                                                                    <button
+                                                                        onClick={handleCancelEdit}
+                                                                        style={{
+                                                                            padding: '0.5rem 1rem',
+                                                                            background: 'transparent',
+                                                                            border: '1px solid var(--border-color)',
+                                                                            borderRadius: '0.5rem',
+                                                                            cursor: 'pointer',
+                                                                            color: 'var(--text-primary)',
+                                                                            fontSize: '0.875rem',
+                                                                            fontWeight: 500,
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={handleSaveEdit}
+                                                                        style={{
+                                                                            padding: '0.5rem 1rem',
+                                                                            background: 'var(--primary)',
+                                                                            border: 'none',
+                                                                            borderRadius: '0.5rem',
+                                                                            cursor: 'pointer',
+                                                                            color: 'white',
+                                                                            fontSize: '0.875rem',
+                                                                            fontWeight: 600,
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                                                                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                                                                    >
+                                                                        Save
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            message.content
+                                                            <MessageWithEmojis content={message.content} />
                                                         )}
 
                                                         {/* Display attachments */}
@@ -835,7 +939,11 @@ const DashboardPage = () => {
                                     rows={1}
                                     disabled={sending}
                                 />
-                                <button type="button" className="input-action-btn">
+                                <button
+                                    type="button"
+                                    className="input-action-btn"
+                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                >
                                     <Smile size={18} />
                                 </button>
                                 <button type="submit" className="send-btn" disabled={sending || (!messageInput.trim() && selectedFiles.length === 0)}>
@@ -915,6 +1023,14 @@ const DashboardPage = () => {
                 cancelText="Keep Messages"
                 type="danger"
             />
+
+            {/* Emoji Picker */}
+            {showEmojiPicker && (
+                <EmojiPicker
+                    onEmojiSelect={handleEmojiSelect}
+                    onClose={() => setShowEmojiPicker(false)}
+                />
+            )}
         </div>
     );
 };

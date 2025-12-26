@@ -151,6 +151,9 @@ export type Database = {
           id: string
           read_receipts_enabled: boolean | null
           show_online_status: boolean | null
+          notification_enabled: boolean | null
+          notification_sound: boolean | null
+          notification_preview: boolean | null
           updated_at: string | null
           user_id: string
           username: string
@@ -164,6 +167,9 @@ export type Database = {
           id?: string
           read_receipts_enabled?: boolean | null
           show_online_status?: boolean | null
+          notification_enabled?: boolean | null
+          notification_sound?: boolean | null
+          notification_preview?: boolean | null
           updated_at?: string | null
           user_id: string
           username: string
@@ -177,6 +183,9 @@ export type Database = {
           id?: string
           read_receipts_enabled?: boolean | null
           show_online_status?: boolean | null
+          notification_enabled?: boolean | null
+          notification_sound?: boolean | null
+          notification_preview?: boolean | null
           updated_at?: string | null
           user_id?: string
           username?: string
@@ -185,18 +194,21 @@ export type Database = {
       }
       user_presence: {
         Row: {
+          connection_id: string | null
           last_seen: string | null
           online: boolean | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          connection_id?: string | null
           last_seen?: string | null
           online?: boolean | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          connection_id?: string | null
           last_seen?: string | null
           online?: boolean | null
           updated_at?: string | null
@@ -238,7 +250,7 @@ export type Database = {
         }[]
       }
       update_user_presence: {
-        Args: { p_online: boolean; p_user_id: string }
+        Args: { p_connection_id?: string; p_online: boolean; p_user_id: string }
         Returns: undefined
       }
     }

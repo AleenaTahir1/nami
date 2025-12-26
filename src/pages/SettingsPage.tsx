@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     User, Lock, LogOut,
-    Eye, Mail, Camera, ChevronLeft, Palette, Sun, Moon
+    Eye, Mail, Camera, ChevronLeft, Palette, Sun, Moon, Bell
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useProfile } from '../hooks/useProfile';
 import { uploadAvatar, deleteAvatar } from '../lib/avatar';
+import { NotificationSettings } from '../components/NotificationSettings';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
@@ -22,7 +23,7 @@ const SettingsPage = () => {
     const [saving, setSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
-    const [activeTab, setActiveTab] = useState<'profile' | 'appearance'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'notifications'>('profile');
     const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('nami-theme') as 'light' | 'dark' || 'light');
 
     useEffect(() => {
@@ -175,6 +176,13 @@ const SettingsPage = () => {
                         <Palette size={16} />
                         <span>Appearance</span>
                     </button>
+                    <button
+                        className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('notifications')}
+                    >
+                        <Bell size={16} />
+                        <span>Notifications</span>
+                    </button>
                 </nav>
 
                 {/* Bottom Actions */}
@@ -193,8 +201,8 @@ const SettingsPage = () => {
             {/* Main Content Area */}
             <main className="settings-content">
                 <header className="settings-header">
-                    <h1>{activeTab === 'profile' ? 'Profile Settings' : 'Appearance'}</h1>
-                    <p>{activeTab === 'profile' ? 'Manage your profile and preferences.' : 'Customize the look and feel of Nami.'}</p>
+                    <h1>{activeTab === 'profile' ? 'Profile Settings' : activeTab === 'appearance' ? 'Appearance' : 'Notifications'}</h1>
+                    <p>{activeTab === 'profile' ? 'Manage your profile and preferences.' : activeTab === 'appearance' ? 'Customize the look and feel of Nami.' : 'Manage notification settings and permissions.'}</p>
                 </header>
 
                 {activeTab === 'profile' ? (
@@ -363,7 +371,7 @@ const SettingsPage = () => {
                             </button>
                         </div>
                     </div>
-                ) : (
+                ) : activeTab === 'appearance' ? (
                     <div className="settings-form">
                         {/* Theme Selection */}
                         <section className="theme-section">
@@ -392,6 +400,10 @@ const SettingsPage = () => {
                                 </button>
                             </div>
                         </section>
+                    </div>
+                ) : (
+                    <div className="settings-form">
+                        <NotificationSettings />
                     </div>
                 )}
             </main>

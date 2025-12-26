@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getMultiplePresences, subscribeToPresence } from '../lib/presence';
 import type { UserPresence } from '../lib/supabase-types';
 
@@ -35,15 +35,20 @@ export function useContactsPresence(contactUserIds: string[]) {
     return unsubscribe;
   }, [contactUserIds.join(',')]); // Depend on stringified array
 
-  const isOnline = (userId: string): boolean => {
-    return presences.get(userId)?.online ?? false;
-  };
+  // Memoize functions to prevent unnecessary re-renders
+  const isOnline = useMemo(() => {
+    return (userId: string): boolean => {
+      return presences.get(userId)?.online ?? false;
+    };
+  }, [presences]);
 
-  const getLastSeen = (userId: string): Date | null => {
-    const presence = presences.get(userId);
-    if (!presence?.last_seen) return null;
-    return new Date(presence.last_seen);
-  };
+  const getLastSeen = useMemo(() => {
+    return (userId: string): Date | null => {
+      const presence = presences.get(userId);
+      if (!presence?.last_seen) return null;
+      return new Date(presence.last_seen);
+    };
+  }, [presences]);
 
   return { presences, isOnline, getLastSeen };
 }

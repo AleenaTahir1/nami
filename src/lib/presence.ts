@@ -1,14 +1,20 @@
 import { supabase } from './supabase';
+import type { UserPresence } from './supabase-types';
 
-export async function updatePresence(userId: string, online: boolean) {
+export async function updatePresence(userId: string, online: boolean, connectionId?: string) {
   const { error } = await supabase.rpc('update_user_presence', {
     p_user_id: userId,
     p_online: online,
+    p_connection_id: connectionId,
   });
 
   if (error) {
     console.error('Error updating presence:', error);
   }
+}
+
+export interface PresenceWithPrivacy extends UserPresence {
+  show_online_status: boolean;
 }
 
 export async function getUserPresence(userId: string) {
@@ -29,9 +35,13 @@ export async function getUserPresence(userId: string) {
 export async function getMultiplePresences(userIds: string[]) {
   if (userIds.length === 0) return [];
 
+  // Join with profiles to get show_online_status privacy setting
   const { data, error } = await supabase
     .from('user_presence')
-    .select('*')
+    .select(`
+      *,
+      profiles!inner(show_online_status)
+    `)
     .in('user_id', userIds);
 
   if (error) {
@@ -39,7 +49,24 @@ export async function getMultiplePresences(userIds: string[]) {
     return [];
   }
 
-  return data;
+  // Map the data and apply privacy filtering
+  return data.map((item: any) => {
+    const presence = {
+      user_id: item.user_id,
+      online: item.online,
+      last_seen: item.last_seen,
+      updated_at: item.updated_at,
+      connection_id: item.connection_id,
+    };
+
+    // If user has disabled online status, always show as offline
+    const showOnlineStatus = item.profiles?.show_online_status ?? true;
+    if (!showOnlineStatus) {
+      return { ...presence, online: false };
+    }
+
+    return presence;
+  });
 }
 
 export function subscribeToPresence(
