@@ -38,8 +38,47 @@
   --radius-xl: 2rem;
   --radius-full: 9999px;
 
+  /* Active Theme Colors (defaults to light) */
+  --bg-primary: #FFF1F2;
+  --bg-secondary: #ffffff;
+  --text-primary: #0f0f0f;
+  --text-secondary: #9D174D;
+}
+
+/* Dark Theme - Pure Black and White */
+[data-theme="dark"] {
+  /* Backgrounds - Pure Black */
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+
+  /* Text - Pure White */
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+
+  /* Remove all glass effects - solid black */
+  --glass-bg: #000000;
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: none;
+
+  /* Override all color variables to black/white */
+  --background-light: #000000;
+  --background-dark: #000000;
+  --muted-mauve: #ffffff;
+
+  /* Keep primary pink for buttons/accents only */
+  --primary: #f471b5;
+  --primary-dark: #db4c9a;
+  --primary-light: #ffa3d0;
+}
+
+:root {
   /* Font */
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
@@ -72,8 +111,8 @@ body,
 }
 
 body {
-  background-color: var(--background-light);
-  color: var(--muted-mauve);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -431,7 +470,7 @@ a:hover {
   justify-content: center;
   width: 4rem;
   height: 4rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 50%;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   transition: transform 0.5s ease;
@@ -616,7 +655,7 @@ a:hover {
   width: 100%;
   height: 2.5rem;
   padding: 0 1rem 0 2.5rem;
-  background: white;
+  background: var(--bg-secondary);
   border: none;
   border-radius: var(--radius-full);
   font-size: 0.875rem;
@@ -651,7 +690,7 @@ a:hover {
 }
 
 .contact-item:hover {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(244, 113, 181, 0.05);
 }
 
 .contact-item.active {
@@ -668,7 +707,7 @@ a:hover {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), #c084fc);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -781,7 +820,7 @@ a:hover {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, var(--background-light), white);
+  background: var(--bg-primary);
   overflow: hidden;
   position: relative;
 }
@@ -792,8 +831,8 @@ a:hover {
   justify-content: space-between;
   padding: 0.5rem 1rem;
   border-bottom: 1px solid rgba(244, 113, 181, 0.05);
-  background: rgba(255, 241, 242, 0.9);
-  backdrop-filter: blur(10px);
+  background: var(--bg-secondary);
+  backdrop-filter: none;
   flex-shrink: 0;
 }
 
@@ -960,7 +999,7 @@ a:hover {
 }
 
 .message.received .message-bubble {
-  background: white;
+  background: var(--bg-secondary);
   color: var(--muted-mauve);
   border-bottom-left-radius: 0.25rem;
   box-shadow: 0 2px 10px rgba(244, 113, 181, 0.08);
@@ -990,7 +1029,7 @@ a:hover {
   padding: 0.5rem 1.5rem 0.75rem;
   display: flex;
   justify-content: center;
-  background: linear-gradient(to top, rgba(255, 241, 242, 1) 0%, rgba(255, 241, 242, 0.95) 80%, rgba(255, 241, 242, 0.8) 100%);
+  background: var(--bg-primary);
 }
 
 .message-input-wrapper {
@@ -1000,7 +1039,7 @@ a:hover {
   width: 100%;
   max-width: 800px;
   padding: 0.375rem 0.5rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 1.25rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
@@ -1015,7 +1054,7 @@ a:hover {
   bottom: 100%;
   left: 0;
   margin-bottom: 0.5rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -1134,10 +1173,10 @@ a:hover {
   display: flex;
   flex-direction: column;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--bg-secondary);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: none;
 }
 
 .back-btn {
@@ -1227,7 +1266,7 @@ a:hover {
 }
 
 .nav-item.active {
-  background: white;
+  background: var(--bg-secondary);
   color: var(--primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -1270,10 +1309,10 @@ a:hover {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bg-secondary);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: none;
   overflow: hidden;
 }
 
@@ -1372,7 +1411,7 @@ a:hover {
 
 .btn-secondary {
   padding: 0.5rem 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border: 1px solid rgba(157, 23, 77, 0.1);
   border-radius: var(--radius-md);
   font-size: 0.8rem;
@@ -1434,7 +1473,7 @@ a:hover {
 .form-group input,
 .form-group textarea {
   padding: 0.75rem 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border: 1px solid rgba(157, 23, 77, 0.1);
   border-radius: var(--radius-md);
   font-size: 0.875rem;
@@ -1450,7 +1489,7 @@ a:hover {
 }
 
 .form-group input.disabled {
-  background: #f9fafb;
+  background: var(--bg-primary);
   border-color: transparent;
   color: rgba(157, 23, 77, 0.4);
   cursor: not-allowed;
@@ -1503,7 +1542,7 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(157, 23, 77, 0.05);
   margin-bottom: 0.5rem;
@@ -1567,7 +1606,7 @@ a:hover {
   height: 1.25rem;
   left: 0.125rem;
   top: 0.125rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 50%;
   transition: all 0.3s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -1628,4 +1667,186 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(244, 113, 181, 0.4);
+}
+
+/* ==========================================
+   DARK THEME SPECIFIC OVERRIDES
+   ========================================== */
+[data-theme="dark"] {
+
+  /* Message Bubbles */
+  .message.sent .message-bubble {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .message.received .message-bubble {
+    background: #1a1a1a !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* All Text Colors - Force White */
+  .chat-user-name,
+  .chat-status-text,
+  .contact-name,
+  .contact-last-message,
+  .settings-header h1,
+  .settings-header p,
+  .form-group label,
+  .form-group input,
+  .form-group textarea,
+  .preference-title,
+  .preference-desc,
+  .mini-info h2,
+  .mini-info p,
+  .nav-item,
+  .back-btn,
+  .logout-btn,
+  .version {
+    color: #ffffff !important;
+  }
+
+  /* Input Borders - Make Visible */
+  .form-group input,
+  .form-group textarea,
+  .search-input {
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  /* Message Input Area */
+  .message-input-wrapper {
+    background: #000000 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .message-input-container {
+    background: #1a1a1a !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .message-input {
+    color: #ffffff !important;
+  }
+
+  .message-input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Contact Items */
+  .contact-item {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .contact-item.active {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Settings Sections */
+  .avatar-section,
+  .profile-section,
+  .preferences-section,
+  .theme-section {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Disabled Inputs */
+  .form-group input.disabled {
+    background: #000000 !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Search Input */
+  .search-input {
+    background: #000000 !important;
+  }
+
+  /* Scrollbar for Dark Theme */
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  /* ALL ICONS - Force White */
+  .attach-btn,
+  .emoji-btn,
+  .action-btn,
+  .search-icon,
+  .chat-actions button,
+  svg,
+  .lucide {
+    color: #ffffff !important;
+  }
+
+  /* Placeholder Text */
+  .message-input::placeholder,
+  input::placeholder,
+  textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Icon Buttons */
+  button svg,
+  button .lucide,
+  .icon-btn svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  /* Specific Icon Overrides */
+  .attach-btn svg,
+  .emoji-btn svg,
+  .send-btn svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  /* Action Buttons (video, call, etc) */
+  .action-btn {
+    color: #ffffff !important;
+  }
+
+  .action-btn:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Add Contact Button - White on Black */
+  .btn-primary,
+  .add-contact-btn,
+  button[class*="add-contact"] {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .btn-primary:hover,
+  .add-contact-btn:hover {
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .btn-primary svg {
+    color: #000000 !important;
+    stroke: #000000 !important;
+  }
+
+  /* Search Input - Black Text on White Background */
+  .search-input {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .search-input::placeholder {
+    color: rgba(0, 0, 0, 0.5) !important;
+  }
 }

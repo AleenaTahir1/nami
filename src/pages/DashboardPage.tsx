@@ -550,7 +550,7 @@ const DashboardPage = () => {
                                                                         padding: '0.5rem',
                                                                         border: '1px solid rgba(255,255,255,0.3)',
                                                                         borderRadius: '0.5rem',
-                                                                        background: 'rgba(255,255,255,0.2)',
+                                                                        background: 'var(--bg-secondary)',
                                                                         color: 'inherit',
                                                                         resize: 'none',
                                                                         outline: 'none',
@@ -565,8 +565,8 @@ const DashboardPage = () => {
                                                                     }}
                                                                 />
                                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                                    <button onClick={handleCancelEdit} style={{ padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', color: 'inherit', fontSize: '0.75rem' }}>Cancel</button>
-                                                                    <button onClick={handleSaveEdit} style={{ padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', color: 'inherit', fontSize: '0.75rem', fontWeight: 600 }}>Save</button>
+                                                                    <button onClick={handleCancelEdit} style={{ padding: '0.25rem 0.75rem', background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', cursor: 'pointer', color: 'inherit', fontSize: '0.75rem' }}>Cancel</button>
+                                                                    <button onClick={handleSaveEdit} style={{ padding: '0.25rem 0.75rem', background: 'var(--primary)', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', color: 'white', fontSize: '0.75rem', fontWeight: 600 }}>Save</button>
                                                                 </div>
                                                             </div>
                                                         ) : (
@@ -633,7 +633,7 @@ const DashboardPage = () => {
                                                         className="message-actions-btn"
                                                         style={{
                                                             opacity: 0,
-                                                            background: 'rgba(255,255,255,0.9)',
+                                                            background: 'var(--bg-secondary)',
                                                             border: 'none',
                                                             borderRadius: '50%',
                                                             width: '1.5rem',
@@ -683,7 +683,7 @@ const DashboardPage = () => {
                                     display: 'flex',
                                     gap: '0.5rem',
                                     flexWrap: 'wrap',
-                                    backgroundColor: 'rgba(244, 113, 181, 0.05)'
+                                    backgroundColor: 'var(--bg-secondary)'
                                 }}>
                                     {selectedFiles.map((file, index) => (
                                         <div key={index} style={{
@@ -691,7 +691,7 @@ const DashboardPage = () => {
                                             alignItems: 'center',
                                             gap: '0.5rem',
                                             padding: '0.5rem',
-                                            backgroundColor: 'white',
+                                            backgroundColor: 'var(--bg-secondary)',
                                             borderRadius: '0.5rem',
                                             fontSize: '0.875rem',
                                             border: '1px solid rgba(157, 23, 77, 0.2)'

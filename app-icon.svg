@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff1f2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="flower" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffa3d0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f471b5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+  
+  <!-- Flower petals -->
+  <g transform="translate(256, 256)">
+    <!-- Center circle -->
+    <circle cx="0" cy="0" r="30" fill="#db4c9a"/>
+    
+    <!-- Petals (5 petals arranged in a circle) -->
+    <ellipse cx="0" cy="-70" rx="35" ry="55" fill="url(#flower)" transform="rotate(0)"/>
+    <ellipse cx="0" cy="-70" rx="35" ry="55" fill="url(#flower)" transform="rotate(72)"/>
+    <ellipse cx="0" cy="-70" rx="35" ry="55" fill="url(#flower)" transform="rotate(144)"/>
+    <ellipse cx="0" cy="-70" rx="35" ry="55" fill="url(#flower)" transform="rotate(216)"/>
+    <ellipse cx="0" cy="-70" rx="35" ry="55" fill="url(#flower)" transform="rotate(288)"/>
+  </g>
+</svg>

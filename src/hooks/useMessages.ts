@@ -24,6 +24,7 @@ export function useMessages(contactId: string | null) {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageIdRef = useRef<string | null>(null);
+  const hasScrolledOnceRef = useRef(false);
 
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -48,6 +49,7 @@ export function useMessages(contactId: string | null) {
       setMessageStatuses(new Map());
       setHasMore(false);
       lastMessageIdRef.current = null;
+      hasScrolledOnceRef.current = false;
     }
   }, [user, contactId]);
 
@@ -70,11 +72,17 @@ export function useMessages(contactId: string | null) {
   // Auto-scroll when messages load (Initial Load)
   useEffect(() => {
     if (messages.length > 0 && !loading) {
-      // Longer delay to ensure DOM is fully updated after loading
-      const timer = setTimeout(() => {
-        scrollToBottom(false); // Instant scroll on initial load
-      }, 100);
-      return () => clearTimeout(timer);
+      // Use requestAnimationFrame to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        const timer = setTimeout(() => {
+          scrollToBottom(false); // Instant scroll on initial load
+          // Mark that we've scrolled once to enable pagination
+          setTimeout(() => {
+            hasScrolledOnceRef.current = true;
+          }, 100);
+        }, 1000); // Increased to 1 second
+        return () => clearTimeout(timer);
+      });
     }
   }, [contactId, loading]); // Remove loadingMore from dependency
 
@@ -134,7 +142,8 @@ export function useMessages(contactId: string | null) {
   };
 
   const loadMore = async () => {
-    if (!user || !contactId || loadingMore || !hasMore || messages.length === 0) return;
+    // Don't load more until we've scrolled to bottom at least once
+    if (!hasScrolledOnceRef.current || !user || !contactId || loadingMore || !hasMore || messages.length === 0) return;
 
     try {
       setLoadingMore(true);
