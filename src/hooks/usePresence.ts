@@ -54,11 +54,9 @@ export function usePresence() {
     // Handle page unload
     const handleBeforeUnload = () => {
       // Use sendBeacon for reliable offline status on page close
-      if (navigator.sendBeacon) {
-        // Note: This is a fallback, the actual offline status
-        // will be set by the heartbeat timeout on the server side
-        updatePresence(user.id, false);
-      }
+      // Note: This is a fallback, the actual offline status
+      // will be set by the heartbeat timeout on the server side
+      updatePresence(user.id, false);
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);

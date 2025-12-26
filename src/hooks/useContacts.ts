@@ -1,20 +1,31 @@
 import { useState, useEffect } from 'react';
-import { getUserContacts, addContact as addContactApi, removeContact as removeContactApi } from '../lib/contacts';
+import {
+  getUserContacts,
+  addContact as addContactApi,
+  removeContact as removeContactApi,
+  getContactRequests,
+  acceptContactRequest as acceptContactRequestApi,
+  declineContactRequest as declineContactRequestApi,
+} from '../lib/contacts';
 import { searchProfiles } from '../lib/profiles';
-import type { Profile } from '../lib/supabase-types';
+import type { Profile, ContactRequestWithProfile } from '../lib/supabase-types';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useContacts() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Profile[]>([]);
+  const [requests, setRequests] = useState<ContactRequestWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requestsLoading, setRequestsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       loadContacts();
+      loadRequests();
     } else {
       setContacts([]);
+      setRequests([]);
       setLoading(false);
     }
   }, [user]);
@@ -35,6 +46,20 @@ export function useContacts() {
     }
   };
 
+  const loadRequests = async () => {
+    if (!user) return;
+
+    try {
+      setRequestsLoading(true);
+      const data = await getContactRequests(user.id);
+      setRequests(data as unknown as ContactRequestWithProfile[]);
+    } catch (err) {
+      console.error('Error loading contact requests:', err);
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
   const addContact = async (contactUserId: string) => {
     if (!user) {
       throw new Error('No user logged in');
@@ -48,7 +73,7 @@ export function useContacts() {
 
     try {
       await addContactApi(user.id, contactUserId);
-      await loadContacts(); // Reload contacts
+      await loadContacts();
       setError(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to add contact';
@@ -64,11 +89,39 @@ export function useContacts() {
 
     try {
       await removeContactApi(user.id, contactUserId);
-      await loadContacts(); // Reload contacts
+      await loadContacts();
       setError(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to remove contact';
       setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const acceptRequest = async (requesterId: string) => {
+    if (!user) {
+      throw new Error('No user logged in');
+    }
+
+    try {
+      await acceptContactRequestApi(user.id, requesterId);
+      await Promise.all([loadContacts(), loadRequests()]);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to accept request';
+      throw new Error(errorMessage);
+    }
+  };
+
+  const declineRequest = async (requesterId: string) => {
+    if (!user) {
+      throw new Error('No user logged in');
+    }
+
+    try {
+      await declineContactRequestApi(user.id, requesterId);
+      await loadRequests();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to decline request';
       throw new Error(errorMessage);
     }
   };
@@ -91,12 +144,16 @@ export function useContacts() {
 
   return {
     contacts,
+    requests,
     loading,
+    requestsLoading,
     error,
     addContact,
     removeContact,
+    acceptRequest,
+    declineRequest,
     searchUsers,
     refetch: loadContacts,
+    refetchRequests: loadRequests,
   };
 }
-

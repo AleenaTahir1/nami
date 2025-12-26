@@ -10,6 +10,8 @@ import { useMessages } from '../hooks/useMessages';
 import { useContactsPresence } from '../hooks/useContactsPresence';
 import { useAuth } from '../contexts/AuthContext';
 import { AddContactModal } from '../components/AddContactModal';
+import { MessageContextMenu } from '../components/MessageContextMenu';
+import { ContactRequestsModal } from '../components/ContactRequestsModal';
 import type { Profile, Attachment } from '../lib/supabase-types';
 import { getAttachmentUrl, formatFileSize, getFileIcon } from '../lib/attachments';
 
@@ -93,22 +95,50 @@ const DashboardPage = () => {
     const [selectedContact, setSelectedContact] = useState<Profile | null>(null);
     const [showAttachMenu, setShowAttachMenu] = useState(false);
     const [showAddContact, setShowAddContact] = useState(false);
+    const [showRequests, setShowRequests] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [fileAcceptType, setFileAcceptType] = useState<string>('*');
     const attachMenuRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { contacts, loading, addContact, searchUsers } = useContacts();
-    const { messages, loading: messagesLoading, sending, sendMessage, messagesEndRef, getMessageStatus } = useMessages(selectedContact?.user_id || null);
+    const { contacts, requests, loading, requestsLoading, addContact, searchUsers, acceptRequest, declineRequest } = useContacts();
+    const { messages, loading: messagesLoading, sending, sendMessage, deleteMessageForMe, editMessage, messagesEndRef, getMessageStatus } = useMessages(selectedContact?.user_id || null);
     const { isOnline, getLastSeen } = useContactsPresence(contacts.map(c => c.user_id));
 
-    // Set initial selected contact
+    // Context menu state
+    const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; position: { x: number; y: number }; messageId: string | null }>({
+        isOpen: false,
+        position: { x: 0, y: 0 },
+        messageId: null,
+    });
+
+    // Edit mode state
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editContent, setEditContent] = useState('');
+
+    // Restore last selected contact from localStorage on mount
     useEffect(() => {
         if (contacts.length > 0 && !selectedContact) {
+            const lastContactId = localStorage.getItem('nami_last_contact_id');
+            if (lastContactId) {
+                const lastContact = contacts.find(c => c.user_id === lastContactId);
+                if (lastContact) {
+                    setSelectedContact(lastContact);
+                    return;
+                }
+            }
+            // Fallback to first contact
             setSelectedContact(contacts[0]);
         }
     }, [contacts]);
+
+    // Persist selected contact to localStorage
+    useEffect(() => {
+        if (selectedContact) {
+            localStorage.setItem('nami_last_contact_id', selectedContact.user_id);
+        }
+    }, [selectedContact]);
 
     // Close attach menu when clicking outside
     useEffect(() => {
@@ -175,9 +205,9 @@ const DashboardPage = () => {
 
     // Filter messages based on search query
     const filteredMessages = messageSearchQuery.trim()
-        ? messages.filter(msg => 
+        ? messages.filter(msg =>
             msg.content.toLowerCase().includes(messageSearchQuery.toLowerCase())
-          )
+        )
         : messages;
 
     const formatLastSeen = (date: Date) => {
@@ -231,7 +261,7 @@ const DashboardPage = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <button 
+                    <button
                         className="btn btn-primary"
                         style={{ marginTop: '0.5rem', fontSize: '0.875rem', height: '2rem' }}
                         onClick={() => setShowAddContact(true)}
@@ -239,6 +269,25 @@ const DashboardPage = () => {
                         <UserPlus size={14} />
                         <span>Add Contact</span>
                     </button>
+                    {requests.length > 0 && (
+                        <button
+                            className="btn btn-ghost"
+                            style={{ marginTop: '0.25rem', fontSize: '0.875rem', height: '2rem', position: 'relative' }}
+                            onClick={() => setShowRequests(true)}
+                        >
+                            <span>Requests</span>
+                            <span style={{
+                                background: 'var(--primary)',
+                                color: 'white',
+                                fontSize: '0.7rem',
+                                padding: '0.1rem 0.4rem',
+                                borderRadius: '1rem',
+                                marginLeft: '0.5rem',
+                            }}>
+                                {requests.length}
+                            </span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Contact List */}
@@ -251,7 +300,7 @@ const DashboardPage = () => {
                         filteredContacts.map((contact) => {
                             const online = isOnline(contact.user_id);
                             const lastSeen = getLastSeen(contact.user_id);
-                            
+
                             return (
                                 <div
                                     key={contact.id}
@@ -260,8 +309,8 @@ const DashboardPage = () => {
                                 >
                                     <div className="contact-avatar" style={{ width: '48px', height: '48px', position: 'relative', flexShrink: 0 }}>
                                         {contact.avatar_url ? (
-                                            <img 
-                                                src={contact.avatar_url} 
+                                            <img
+                                                src={contact.avatar_url}
                                                 alt={contact.display_name}
                                                 style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
                                             />
@@ -305,8 +354,8 @@ const DashboardPage = () => {
                             <div className="chat-user-info">
                                 <div className="chat-avatar" style={{ width: '40px', height: '40px', position: 'relative', flexShrink: 0 }}>
                                     {selectedContact.avatar_url ? (
-                                        <img 
-                                            src={selectedContact.avatar_url} 
+                                        <img
+                                            src={selectedContact.avatar_url}
                                             alt={selectedContact.display_name}
                                             style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
                                         />
@@ -324,59 +373,59 @@ const DashboardPage = () => {
                                     </span>
                                 </div>
                             </div>
-                    <div className="chat-actions">
-                        <div style={{ position: 'relative', marginRight: '0.5rem' }}>
-                            <input
-                                type="text"
-                                placeholder="Search messages..."
-                                value={messageSearchQuery}
-                                onChange={(e) => setMessageSearchQuery(e.target.value)}
-                                style={{
-                                    padding: '0.5rem 2rem 0.5rem 0.75rem',
-                                    borderRadius: '1rem',
-                                    border: '1px solid rgba(157, 23, 77, 0.2)',
-                                    fontSize: '0.875rem',
-                                    width: '200px',
-                                    outline: 'none'
-                                }}
-                            />
-                            {messageSearchQuery && (
-                                <button
-                                    onClick={() => setMessageSearchQuery('')}
-                                    style={{
-                                        position: 'absolute',
-                                        right: '0.5rem',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '0.25rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        color: 'var(--muted-mauve)'
-                                    }}
-                                >
-                                    <X size={14} />
+                            <div className="chat-actions">
+                                <div style={{ position: 'relative', marginRight: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Search messages..."
+                                        value={messageSearchQuery}
+                                        onChange={(e) => setMessageSearchQuery(e.target.value)}
+                                        style={{
+                                            padding: '0.5rem 2rem 0.5rem 0.75rem',
+                                            borderRadius: '1rem',
+                                            border: '1px solid rgba(157, 23, 77, 0.2)',
+                                            fontSize: '0.875rem',
+                                            width: '200px',
+                                            outline: 'none'
+                                        }}
+                                    />
+                                    {messageSearchQuery && (
+                                        <button
+                                            onClick={() => setMessageSearchQuery('')}
+                                            style={{
+                                                position: 'absolute',
+                                                right: '0.5rem',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                padding: '0.25rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                color: 'var(--muted-mauve)'
+                                            }}
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                                <button className="action-btn">
+                                    <Phone size={16} />
                                 </button>
-                            )}
-                        </div>
-                        <button className="action-btn">
-                            <Phone size={16} />
-                        </button>
-                        <button className="action-btn">
-                            <Video size={16} />
-                        </button>
-                        <button className="action-btn">
-                            <MoreVertical size={16} />
-                        </button>
-                    </div>
-                </header>
+                                <button className="action-btn">
+                                    <Video size={16} />
+                                </button>
+                                <button className="action-btn">
+                                    <MoreVertical size={16} />
+                                </button>
+                            </div>
+                        </header>
 
                         {/* Messages Area */}
-                        <div className="messages-area" style={{ 
-                            overflowY: 'auto', 
-                            flex: 1, 
+                        <div className="messages-area" style={{
+                            overflowY: 'auto',
+                            flex: 1,
                             padding: '1.5rem',
                             paddingBottom: '2rem',
                             display: 'flex',
@@ -403,17 +452,56 @@ const DashboardPage = () => {
                                         const status = isSent ? getMessageStatus(message.id) : null;
                                         const isDelivered = status?.delivered_at;
                                         const isRead = status?.read_at;
-                                        
+                                        const isEditing = editingMessageId === message.id;
+                                        const isDeleted = message.deleted;
+
+                                        // Check if message can be edited (within 15 minutes)
+                                        const messageTime = message.created_at ? new Date(message.created_at).getTime() : 0;
+                                        const canEdit = isSent && !isDeleted && (Date.now() - messageTime) < 15 * 60 * 1000;
+
+                                        const handleContextMenu = (e: React.MouseEvent) => {
+                                            if (isDeleted) return;
+                                            e.preventDefault();
+                                            setContextMenu({
+                                                isOpen: true,
+                                                position: { x: e.clientX, y: e.clientY },
+                                                messageId: message.id,
+                                            });
+                                        };
+
+                                        const handleStartEdit = () => {
+                                            setEditingMessageId(message.id);
+                                            setEditContent(message.content);
+                                        };
+
+                                        const handleSaveEdit = async () => {
+                                            if (!editContent.trim()) return;
+                                            try {
+                                                await editMessage(message.id, editContent);
+                                                setEditingMessageId(null);
+                                                setEditContent('');
+                                            } catch (err) {
+                                                alert(err instanceof Error ? err.message : 'Failed to edit message');
+                                            }
+                                        };
+
+                                        const handleCancelEdit = () => {
+                                            setEditingMessageId(null);
+                                            setEditContent('');
+                                        };
+
                                         return (
                                             <div
                                                 key={message.id}
                                                 className={`message ${isSent ? 'sent' : 'received'}`}
+                                                onContextMenu={handleContextMenu}
+                                                style={{ opacity: isDeleted ? 0.6 : 1 }}
                                             >
                                                 {!isSent && (
                                                     <div className="message-avatar" style={{ width: '28px', height: '28px', flexShrink: 0 }}>
                                                         {selectedContact.avatar_url ? (
-                                                            <img 
-                                                                src={selectedContact.avatar_url} 
+                                                            <img
+                                                                src={selectedContact.avatar_url}
                                                                 alt={selectedContact.display_name}
                                                                 style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
                                                             />
@@ -425,11 +513,43 @@ const DashboardPage = () => {
                                                     </div>
                                                 )}
                                                 <div className="message-content">
-                                                    <div className="message-bubble">
-                                                        {message.content}
-                                                        
+                                                    <div className="message-bubble" style={{ fontStyle: isDeleted ? 'italic' : 'normal' }}>
+                                                        {isEditing ? (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                                <textarea
+                                                                    value={editContent}
+                                                                    onChange={(e) => setEditContent(e.target.value)}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        minHeight: '60px',
+                                                                        padding: '0.5rem',
+                                                                        border: '1px solid rgba(255,255,255,0.3)',
+                                                                        borderRadius: '0.5rem',
+                                                                        background: 'rgba(255,255,255,0.2)',
+                                                                        color: 'inherit',
+                                                                        resize: 'none',
+                                                                        outline: 'none',
+                                                                    }}
+                                                                    autoFocus
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                                                            e.preventDefault();
+                                                                            handleSaveEdit();
+                                                                        }
+                                                                        if (e.key === 'Escape') handleCancelEdit();
+                                                                    }}
+                                                                />
+                                                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                                    <button onClick={handleCancelEdit} style={{ padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', color: 'inherit', fontSize: '0.75rem' }}>Cancel</button>
+                                                                    <button onClick={handleSaveEdit} style={{ padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', color: 'inherit', fontSize: '0.75rem', fontWeight: 600 }}>Save</button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            message.content
+                                                        )}
+
                                                         {/* Display attachments */}
-                                                        {message.attachments && message.attachments.length > 0 && (
+                                                        {!isEditing && message.attachments && message.attachments.length > 0 && (
                                                             <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                                                 {message.attachments.map((attachment) => (
                                                                     <AttachmentDisplay key={attachment.id} attachment={attachment} />
@@ -443,7 +563,10 @@ const DashboardPage = () => {
                                                             minute: '2-digit',
                                                             hour12: true
                                                         })}
-                                                        {isSent && (
+                                                        {message.edited_at && !isDeleted && (
+                                                            <span style={{ marginLeft: '0.25rem', opacity: 0.7 }}>(edited)</span>
+                                                        )}
+                                                        {isSent && !isDeleted && (
                                                             <span style={{ marginLeft: '0.25rem', display: 'inline-flex', alignItems: 'center' }}>
                                                                 {isRead ? (
                                                                     <CheckCheck size={12} style={{ color: 'var(--primary)' }} />
@@ -456,11 +579,70 @@ const DashboardPage = () => {
                                                         )}
                                                     </span>
                                                 </div>
+
+                                                {/* Message Actions Button (visible on hover) - positioned outside message */}
+                                                {!isDeleted && !isEditing && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            // Position menu to avoid going off screen
+                                                            let x = rect.left;
+                                                            let y = rect.bottom + 4;
+
+                                                            // Check if menu would go off right edge
+                                                            if (x + 180 > window.innerWidth) {
+                                                                x = window.innerWidth - 190;
+                                                            }
+                                                            // Check if menu would go off bottom
+                                                            if (y + 150 > window.innerHeight) {
+                                                                y = rect.top - 150;
+                                                            }
+
+                                                            setContextMenu({
+                                                                isOpen: true,
+                                                                position: { x, y },
+                                                                messageId: message.id,
+                                                            });
+                                                        }}
+                                                        className="message-actions-btn"
+                                                        style={{
+                                                            opacity: 0,
+                                                            background: 'rgba(255,255,255,0.9)',
+                                                            border: 'none',
+                                                            borderRadius: '50%',
+                                                            width: '1.5rem',
+                                                            height: '1.5rem',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                                            transition: 'opacity 0.2s ease',
+                                                            flexShrink: 0,
+                                                            alignSelf: 'center',
+                                                        }}
+                                                        title="More options"
+                                                    >
+                                                        <MoreVertical size={12} style={{ color: 'var(--muted-mauve)' }} />
+                                                    </button>
+                                                )}
+
+                                                {/* Context Menu */}
+                                                {contextMenu.isOpen && contextMenu.messageId === message.id && (
+                                                    <MessageContextMenu
+                                                        isOpen={true}
+                                                        position={contextMenu.position}
+                                                        onClose={() => setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, messageId: null })}
+                                                        isSentByMe={isSent}
+                                                        canEdit={canEdit}
+                                                        onEdit={handleStartEdit}
+                                                        onDeleteForMe={() => deleteMessageForMe(message.id)}
+                                                    />
+                                                )}
                                             </div>
                                         );
                                     })}
-                                    {/* Spacer to ensure last message is visible above input */}
-                                    <div style={{ minHeight: '1rem' }} />
                                     <div ref={messagesEndRef} />
                                 </>
                             )}
@@ -470,8 +652,8 @@ const DashboardPage = () => {
                         <div className="message-input-container">
                             {/* File Preview */}
                             {selectedFiles.length > 0 && (
-                                <div style={{ 
-                                    padding: '0.75rem 1rem', 
+                                <div style={{
+                                    padding: '0.75rem 1rem',
                                     borderTop: '1px solid rgba(157, 23, 77, 0.1)',
                                     display: 'flex',
                                     gap: '0.5rem',
@@ -510,62 +692,62 @@ const DashboardPage = () => {
                                 </div>
                             )}
                             <form className="message-input-wrapper" onSubmit={handleSendMessage}>
-                        {/* Attachment Button with Dropdown */}
-                        <div className="attach-wrapper" ref={attachMenuRef}>
-                            <button
-                                type="button"
-                                className="input-action-btn"
-                                onClick={() => setShowAttachMenu(!showAttachMenu)}
-                            >
-                                {showAttachMenu ? <X size={18} /> : <Paperclip size={18} />}
-                            </button>
+                                {/* Attachment Button with Dropdown */}
+                                <div className="attach-wrapper" ref={attachMenuRef}>
+                                    <button
+                                        type="button"
+                                        className="input-action-btn"
+                                        onClick={() => setShowAttachMenu(!showAttachMenu)}
+                                    >
+                                        {showAttachMenu ? <X size={18} /> : <Paperclip size={18} />}
+                                    </button>
 
-                            {showAttachMenu && (
-                                <div className="attach-menu">
-                                    <button type="button" onClick={() => handleAttachmentClick('image')}>
-                                        <Image size={18} />
-                                        <span>Photo</span>
-                                    </button>
-                                    <button type="button" onClick={() => handleAttachmentClick('video')}>
-                                        <Film size={18} />
-                                        <span>Video</span>
-                                    </button>
-                                    <button type="button" onClick={() => handleAttachmentClick('document')}>
-                                        <FileText size={18} />
-                                        <span>Document</span>
-                                    </button>
+                                    {showAttachMenu && (
+                                        <div className="attach-menu">
+                                            <button type="button" onClick={() => handleAttachmentClick('image')}>
+                                                <Image size={18} />
+                                                <span>Photo</span>
+                                            </button>
+                                            <button type="button" onClick={() => handleAttachmentClick('video')}>
+                                                <Film size={18} />
+                                                <span>Video</span>
+                                            </button>
+                                            <button type="button" onClick={() => handleAttachmentClick('document')}>
+                                                <FileText size={18} />
+                                                <span>Document</span>
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Hidden file input */}
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        multiple
+                                        accept={fileAcceptType}
+                                        style={{ display: 'none' }}
+                                        onChange={handleFileSelect}
+                                    />
                                 </div>
-                            )}
-                            
-                            {/* Hidden file input */}
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                multiple
-                                accept={fileAcceptType}
-                                style={{ display: 'none' }}
-                                onChange={handleFileSelect}
-                            />
-                        </div>
 
-                        <textarea
-                            className="message-textarea"
-                            placeholder="Type a message..."
-                            value={messageInput}
-                            onChange={(e) => setMessageInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSendMessage(e);
-                                }
-                            }}
-                            rows={1}
-                            disabled={sending}
-                        />
-                        <button type="button" className="input-action-btn">
-                            <Smile size={18} />
-                        </button>
-                                <button type="submit" className="send-btn" disabled={sending || !messageInput.trim()}>
+                                <textarea
+                                    className="message-textarea"
+                                    placeholder="Type a message..."
+                                    value={messageInput}
+                                    onChange={(e) => setMessageInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSendMessage(e);
+                                        }
+                                    }}
+                                    rows={1}
+                                    disabled={sending}
+                                />
+                                <button type="button" className="input-action-btn">
+                                    <Smile size={18} />
+                                </button>
+                                <button type="submit" className="send-btn" disabled={sending || (!messageInput.trim() && selectedFiles.length === 0)}>
                                     <Send size={16} />
                                 </button>
                             </form>
@@ -589,6 +771,16 @@ const DashboardPage = () => {
                     await addContact(userId);
                     setShowAddContact(false);
                 }}
+            />
+
+            {/* Contact Requests Modal */}
+            <ContactRequestsModal
+                isOpen={showRequests}
+                onClose={() => setShowRequests(false)}
+                requests={requests}
+                onAccept={acceptRequest}
+                onDecline={declineRequest}
+                loading={requestsLoading}
             />
         </div>
     );

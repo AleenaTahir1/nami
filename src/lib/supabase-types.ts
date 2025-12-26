@@ -253,11 +253,17 @@ export type Database = {
 
 // Helper types
 export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 export type Message = Database['public']['Tables']['messages']['Row'];
 export type Contact = Database['public']['Tables']['contacts']['Row'];
 export type MessageStatus = Database['public']['Tables']['message_status']['Row'];
 export type UserPresence = Database['public']['Tables']['user_presence']['Row'];
 export type Attachment = Database['public']['Tables']['attachments']['Row'];
+export type ContactStatus = 'pending' | 'accepted' | 'blocked';
+
+export type ContactRequestWithProfile = Contact & {
+  profiles: Profile;
+};
 
 export type MessageWithStatus = Message & {
   status?: MessageStatus;

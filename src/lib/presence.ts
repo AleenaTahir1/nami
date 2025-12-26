@@ -56,7 +56,9 @@ export function subscribeToPresence(
         table: 'user_presence',
       },
       (payload) => {
-        if (userIds.includes(payload.new?.user_id || payload.old?.user_id)) {
+        const newRecord = payload.new as { user_id?: string } | undefined;
+        const oldRecord = payload.old as { user_id?: string } | undefined;
+        if (userIds.includes(newRecord?.user_id || oldRecord?.user_id || '')) {
           onPresenceChange(payload.new || payload.old);
         }
       }

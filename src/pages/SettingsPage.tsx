@@ -131,7 +131,6 @@ const SettingsPage = () => {
                             <img 
                                 src={profile.avatar_url} 
                                 alt="Profile" 
-                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                             />
                         ) : (
                             <div className="avatar-placeholder">
@@ -183,7 +182,6 @@ const SettingsPage = () => {
                                     <img 
                                         src={profile.avatar_url} 
                                         alt="Profile" 
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                                     />
                                 ) : (
                                     <div className="avatar-placeholder large">

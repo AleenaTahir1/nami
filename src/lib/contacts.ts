@@ -14,18 +14,43 @@ export async function getUserContacts(userId: string) {
 }
 
 export async function getContactRequests(userId: string) {
-  const { data, error } = await supabase
+  // First get pending contact requests where this user is the target
+  const { data: contactData, error: contactError } = await supabase
     .from('contacts')
-    .select('*, profiles!contacts_contact_id_fkey(*)')
+    .select('*')
     .eq('contact_id', userId)
     .eq('status', 'pending');
 
-  if (error) {
-    throw error;
+  if (contactError) {
+    throw contactError;
   }
 
-  return data;
+  if (!contactData || contactData.length === 0) {
+    return [];
+  }
+
+  // Get the requester user_ids
+  const requesterIds = contactData.map(c => c.user_id);
+
+  // Fetch profiles for all requesters
+  const { data: profilesData, error: profilesError } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('user_id', requesterIds);
+
+  if (profilesError) {
+    throw profilesError;
+  }
+
+  // Map profiles to contacts
+  const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+
+  return contactData.map(contact => ({
+    ...contact,
+    profiles: profilesMap.get(contact.user_id) || null,
+  })).filter(c => c.profiles !== null);
 }
+
 
 export async function addContact(userId: string, contactUserId: string) {
   // Check if contact already exists
@@ -84,7 +109,7 @@ export async function updateContactStatus(
 ) {
   const { data, error } = await supabase
     .from('contacts')
-    .update({ 
+    .update({
       status,
       updated_at: new Date().toISOString(),
     })
@@ -103,7 +128,7 @@ export async function acceptContactRequest(userId: string, requesterId: string) 
   // Update the pending request to accepted
   const { error: updateError } = await supabase
     .from('contacts')
-    .update({ 
+    .update({
       status: 'accepted',
       updated_at: new Date().toISOString(),
     })
@@ -133,6 +158,20 @@ export async function acceptContactRequest(userId: string, requesterId: string) 
   return data;
 }
 
+export async function declineContactRequest(userId: string, requesterId: string) {
+  // Delete the pending request
+  const { error } = await supabase
+    .from('contacts')
+    .delete()
+    .eq('user_id', requesterId)
+    .eq('contact_id', userId)
+    .eq('status', 'pending');
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function removeContact(userId: string, contactUserId: string) {
   // Remove both directions of the relationship
   const { error: error1 } = await supabase
@@ -159,7 +198,7 @@ export async function removeContact(userId: string, contactUserId: string) {
 export async function blockContact(userId: string, contactUserId: string) {
   const { data, error } = await supabase
     .from('contacts')
-    .update({ 
+    .update({
       status: 'blocked',
       updated_at: new Date().toISOString(),
     })
