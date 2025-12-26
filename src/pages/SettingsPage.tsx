@@ -1,17 +1,63 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     User, Lock, LogOut,
     Eye, Mail, Camera, ChevronLeft
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useProfile } from '../hooks/useProfile';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
-    const [displayName, setDisplayName] = useState('Jane Doe');
-    const [username, setUsername] = useState('janedoe');
-    const [bio, setBio] = useState('Design enthusiast, coffee lover, and minimalist.');
+    const { signOut, user } = useAuth();
+    const { profile, loading, updateProfile } = useProfile();
+    
+    const [displayName, setDisplayName] = useState('');
+    const [username, setUsername] = useState('');
+    const [bio, setBio] = useState('');
     const [onlineStatus, setOnlineStatus] = useState(false);
     const [readReceipts, setReadReceipts] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saveMessage, setSaveMessage] = useState('');
+
+    useEffect(() => {
+        if (profile) {
+            setDisplayName(profile.display_name);
+            setUsername(profile.username);
+            setBio(profile.bio || '');
+            setOnlineStatus(profile.show_online_status ?? true);
+            setReadReceipts(profile.read_receipts_enabled ?? true);
+        }
+    }, [profile]);
+
+    const handleSave = async () => {
+        try {
+            setSaving(true);
+            setSaveMessage('');
+            await updateProfile({
+                display_name: displayName,
+                username: username,
+                bio: bio || null,
+                show_online_status: onlineStatus,
+                read_receipts_enabled: readReceipts,
+            });
+            setSaveMessage('Profile updated successfully!');
+            setTimeout(() => setSaveMessage(''), 3000);
+        } catch (error) {
+            setSaveMessage('Failed to update profile');
+            console.error('Error updating profile:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+                Loading...
+            </div>
+        );
+    }
 
     return (
         <div className="settings-layout">
@@ -26,12 +72,14 @@ const SettingsPage = () => {
                 {/* User Mini Profile */}
                 <div className="user-mini-profile">
                     <div className="mini-avatar">
-                        <div className="avatar-placeholder">JD</div>
+                        <div className="avatar-placeholder">
+                            {profile?.display_name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                        </div>
                         <span className="online-indicator" />
                     </div>
                     <div className="mini-info">
-                        <h2>Jane Doe</h2>
-                        <p>Online</p>
+                        <h2>{profile?.display_name || 'User'}</h2>
+                        <p>@{profile?.username || ''}</p>
                     </div>
                 </div>
 
@@ -45,7 +93,10 @@ const SettingsPage = () => {
 
                 {/* Bottom Actions */}
                 <div className="settings-sidebar-footer">
-                    <button className="logout-btn" onClick={() => navigate('/')}>
+                    <button className="logout-btn" onClick={async () => {
+                        await signOut();
+                        navigate('/');
+                    }}>
                         <LogOut size={16} />
                         <span>Log Out</span>
                     </button>
@@ -65,7 +116,9 @@ const SettingsPage = () => {
                     <section className="avatar-section">
                         <div className="avatar-edit">
                             <div className="large-avatar">
-                                <div className="avatar-placeholder large">JD</div>
+                                <div className="avatar-placeholder large">
+                                    {profile?.display_name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                </div>
                             </div>
                             <div className="avatar-overlay">
                                 <Camera size={18} />
@@ -121,7 +174,7 @@ const SettingsPage = () => {
                             <label>Email Address</label>
                             <input
                                 type="email"
-                                value="jane.doe@example.com"
+                                value={profile?.email || user?.email || ''}
                                 disabled
                                 className="disabled"
                             />
@@ -130,6 +183,16 @@ const SettingsPage = () => {
                                 Contact support to change
                             </span>
                         </div>
+
+                        {saveMessage && (
+                            <p style={{ 
+                                color: saveMessage.includes('success') ? '#10b981' : '#ef4444', 
+                                fontSize: '0.875rem',
+                                marginTop: '0.5rem'
+                            }}>
+                                {saveMessage}
+                            </p>
+                        )}
                     </section>
 
                     <hr className="divider" />
@@ -182,7 +245,9 @@ const SettingsPage = () => {
                     {/* Save Actions */}
                     <div className="form-actions">
                         <button className="btn-cancel" onClick={() => navigate('/dashboard')}>Cancel</button>
-                        <button className="btn btn-primary">Save Changes</button>
+                        <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                            {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
                     </div>
                 </div>
             </main>

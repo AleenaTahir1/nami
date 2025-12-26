@@ -1,18 +1,68 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { UserPlus, User, Lock, ShieldCheck, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserPlus, User, Lock, ShieldCheck, Eye, EyeOff, ArrowRight, Mail } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const CreateAccountPage = () => {
+    const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
+    const [displayName, setDisplayName] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const { signUp, signIn } = useAuth();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Implement account creation logic
-        console.log('Create account:', { username, password, confirmPassword, agreedToTerms });
+        setError('');
+
+        // Validation
+        if (password !== confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
+
+        if (!agreedToTerms) {
+            setError('You must agree to the terms and conditions');
+            return;
+        }
+
+        if (!username.trim() || !displayName.trim()) {
+            setError('Username and display name are required');
+            return;
+        }
+
+        setLoading(true);
+
+        const { error: signUpError } = await signUp(
+            email,
+            password,
+            username.trim(),
+            displayName.trim()
+        );
+
+        if (signUpError) {
+            setError(signUpError.message);
+            setLoading(false);
+        } else {
+            // Auto sign in after successful signup
+            const { error: signInError } = await signIn(email, password);
+            if (signInError) {
+                // If auto sign-in fails, redirect to login
+                navigate('/');
+            } else {
+                navigate('/dashboard');
+            }
+        }
     };
 
     return (
@@ -51,6 +101,25 @@ const CreateAccountPage = () => {
 
                 {/* Form Section */}
                 <form className="card-form" onSubmit={handleSubmit} style={{ gap: '0.875rem' }}>
+                    {/* Email Field */}
+                    <div className="input-group">
+                        <label htmlFor="email" style={{ fontSize: '0.75rem' }}>Email</label>
+                        <div className="input-wrapper">
+                            <Mail size={16} className="input-icon" />
+                            <input
+                                type="email"
+                                id="email"
+                                className="form-input"
+                                placeholder="your.email@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                autoComplete="email"
+                                required
+                                style={{ height: '2.25rem', fontSize: '0.8rem', paddingLeft: '2.25rem' }}
+                            />
+                        </div>
+                    </div>
+
                     {/* Username Field */}
                     <div className="input-group">
                         <label htmlFor="username" style={{ fontSize: '0.75rem' }}>Username</label>
@@ -64,6 +133,25 @@ const CreateAccountPage = () => {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 autoComplete="username"
+                                required
+                                style={{ height: '2.25rem', fontSize: '0.8rem', paddingLeft: '2.25rem' }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Display Name Field */}
+                    <div className="input-group">
+                        <label htmlFor="displayName" style={{ fontSize: '0.75rem' }}>Display Name</label>
+                        <div className="input-wrapper">
+                            <UserPlus size={16} className="input-icon" />
+                            <input
+                                type="text"
+                                id="displayName"
+                                className="form-input"
+                                placeholder="Your display name"
+                                value={displayName}
+                                onChange={(e) => setDisplayName(e.target.value)}
+                                required
                                 style={{ height: '2.25rem', fontSize: '0.8rem', paddingLeft: '2.25rem' }}
                             />
                         </div>
@@ -82,6 +170,7 @@ const CreateAccountPage = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 autoComplete="new-password"
+                                required
                                 style={{ height: '2.25rem', fontSize: '0.8rem', paddingLeft: '2.25rem', paddingRight: '2.5rem' }}
                             />
                             <button
@@ -108,10 +197,17 @@ const CreateAccountPage = () => {
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 autoComplete="new-password"
+                                required
                                 style={{ height: '2.25rem', fontSize: '0.8rem', paddingLeft: '2.25rem' }}
                             />
                         </div>
                     </div>
+
+                    {error && (
+                        <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '-0.5rem', marginLeft: '0.25rem' }}>
+                            {error}
+                        </p>
+                    )}
 
                     {/* Terms Checkbox */}
                     <div className="checkbox-group" style={{ marginTop: '0.25rem' }}>
@@ -129,8 +225,8 @@ const CreateAccountPage = () => {
 
                     {/* Actions */}
                     <div className="card-actions" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
-                        <button type="submit" className="btn btn-primary" style={{ height: '2.25rem', fontSize: '0.8rem' }}>
-                            <span>Create Account</span>
+                        <button type="submit" className="btn btn-primary" disabled={loading} style={{ height: '2.25rem', fontSize: '0.8rem' }}>
+                            <span>{loading ? 'Creating Account...' : 'Create Account'}</span>
                             <ArrowRight size={14} />
                         </button>
                         <Link to="/" className="btn btn-ghost" style={{ textDecoration: 'none', height: '2rem', fontSize: '0.75rem' }}>

@@ -3,34 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search, Phone, Video, MoreVertical,
     Paperclip, Smile, Send, Settings,
-    Image, FileText, Film, X
+    Image, FileText, Film, X, UserPlus, Check, CheckCheck
 } from 'lucide-react';
-
-// Mock contact data
-const contacts = [
-    { id: 1, name: 'Sarah Jenkins', lastMessage: 'See you there!', time: '2m', online: true, active: true },
-    { id: 2, name: 'Bob Smith', lastMessage: 'Did you get the file?', time: '1h', online: false, active: false },
-    { id: 3, name: 'Emma Wilson', lastMessage: "Let's reschedule for tomorrow.", time: '3h', online: false, active: false },
-    { id: 4, name: 'David Chen', lastMessage: 'Thanks for the update!', time: '1d', online: false, active: false },
-    { id: 5, name: 'Alice Brown', lastMessage: 'Sent the design files.', time: '2d', online: false, active: false },
-];
-
-// Mock messages
-const messages = [
-    { id: 1, sender: 'them', text: 'Hi! I just wanted to check in about the project timeline. Do we have everything ready for the launch next week?', time: '10:42 AM' },
-    { id: 2, sender: 'me', text: 'Hey Sarah! Yes, almost there.', time: '10:44 AM' },
-    { id: 3, sender: 'me', text: "I'm just finishing up the final assets for the landing page. I should have them sent over by this afternoon.", time: '10:45 AM' },
-    { id: 4, sender: 'them', text: 'That sounds perfect! 🎉', time: '10:46 AM' },
-    { id: 5, sender: 'them', text: 'See you there!', time: '10:46 AM' },
-];
+import { useContacts } from '../hooks/useContacts';
+import { useMessages } from '../hooks/useMessages';
+import { useAuth } from '../contexts/AuthContext';
+import { AddContactModal } from '../components/AddContactModal';
+import type { Profile } from '../lib/supabase-types';
 
 const DashboardPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [messageInput, setMessageInput] = useState('');
-    const [selectedContact, setSelectedContact] = useState(contacts[0]);
+    const [selectedContact, setSelectedContact] = useState<Profile | null>(null);
     const [showAttachMenu, setShowAttachMenu] = useState(false);
+    const [showAddContact, setShowAddContact] = useState(false);
     const attachMenuRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const { contacts, loading, addContact, searchUsers } = useContacts();
+    const { messages, loading: messagesLoading, sending, sendMessage, messagesEndRef, getMessageStatus } = useMessages(selectedContact?.user_id || null);
+
+    // Set initial selected contact
+    useEffect(() => {
+        if (contacts.length > 0 && !selectedContact) {
+            setSelectedContact(contacts[0]);
+        }
+    }, [contacts]);
 
     // Close attach menu when clicking outside
     useEffect(() => {
@@ -43,11 +41,15 @@ const DashboardPage = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleSendMessage = (e: React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (messageInput.trim()) {
-            console.log('Sending message:', messageInput);
-            setMessageInput('');
+        if (messageInput.trim() && !sending) {
+            try {
+                await sendMessage(messageInput);
+                setMessageInput('');
+            } catch (error) {
+                console.error('Failed to send message:', error);
+            }
         }
     };
 
@@ -60,6 +62,19 @@ const DashboardPage = () => {
     const getInitials = (name: string) => {
         return name.split(' ').map(n => n[0]).join('').toUpperCase();
     };
+
+    const filteredContacts = contacts.filter(contact =>
+        contact.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.username.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+                Loading...
+            </div>
+        );
+    }
 
     return (
         <div className="dashboard-layout">
@@ -77,31 +92,44 @@ const DashboardPage = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
+                    <button 
+                        className="btn btn-primary"
+                        style={{ marginTop: '0.5rem', fontSize: '0.875rem', height: '2rem' }}
+                        onClick={() => setShowAddContact(true)}
+                    >
+                        <UserPlus size={14} />
+                        <span>Add Contact</span>
+                    </button>
                 </div>
 
                 {/* Contact List */}
                 <div className="contact-list">
-                    {contacts.map((contact) => (
-                        <div
-                            key={contact.id}
-                            className={`contact-item ${selectedContact.id === contact.id ? 'active' : ''}`}
-                            onClick={() => setSelectedContact(contact)}
-                        >
-                            <div className="contact-avatar">
-                                <div className="avatar-placeholder">
-                                    {getInitials(contact.name)}
-                                </div>
-                                {contact.online && <span className="online-indicator" />}
-                            </div>
-                            <div className="contact-info">
-                                <div className="contact-header">
-                                    <h3 className="contact-name">{contact.name}</h3>
-                                    <span className="contact-time">{contact.time}</span>
-                                </div>
-                                <p className="contact-message">{contact.lastMessage}</p>
-                            </div>
+                    {filteredContacts.length === 0 ? (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-light)', opacity: 0.7 }}>
+                            {contacts.length === 0 ? 'No contacts yet. Add some!' : 'No contacts found'}
                         </div>
-                    ))}
+                    ) : (
+                        filteredContacts.map((contact) => (
+                            <div
+                                key={contact.id}
+                                className={`contact-item ${selectedContact?.id === contact.id ? 'active' : ''}`}
+                                onClick={() => setSelectedContact(contact)}
+                            >
+                                <div className="contact-avatar">
+                                    <div className="avatar-placeholder">
+                                        {getInitials(contact.display_name)}
+                                    </div>
+                                </div>
+                                <div className="contact-info">
+                                    <div className="contact-header">
+                                        <h3 className="contact-name">{contact.display_name}</h3>
+                                        <span className="contact-time">-</span>
+                                    </div>
+                                    <p className="contact-message">@{contact.username}</p>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
 
                 {/* Settings button */}
@@ -115,22 +143,23 @@ const DashboardPage = () => {
 
             {/* Chat Area */}
             <main className="chat-area">
-                {/* Chat Header */}
-                <header className="chat-header">
-                    <div className="chat-user-info">
-                        <div className="chat-avatar">
-                            <div className="avatar-placeholder small">
-                                {getInitials(selectedContact.name)}
+                {selectedContact ? (
+                    <>
+                        {/* Chat Header */}
+                        <header className="chat-header">
+                            <div className="chat-user-info">
+                                <div className="chat-avatar">
+                                    <div className="avatar-placeholder small">
+                                        {getInitials(selectedContact.display_name)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2 className="chat-user-name">{selectedContact.display_name}</h2>
+                                    <span className="chat-status-text">
+                                        @{selectedContact.username}
+                                    </span>
+                                </div>
                             </div>
-                            {selectedContact.online && <span className="online-indicator small" />}
-                        </div>
-                        <div>
-                            <h2 className="chat-user-name">{selectedContact.name}</h2>
-                            <span className="chat-status-text">
-                                {selectedContact.online ? 'Online' : 'Offline'}
-                            </span>
-                        </div>
-                    </div>
                     <div className="chat-actions">
                         <button className="action-btn">
                             <Phone size={16} />
@@ -144,37 +173,73 @@ const DashboardPage = () => {
                     </div>
                 </header>
 
-                {/* Messages Area */}
-                <div className="messages-area">
-                    <div className="date-divider">
-                        <span>Today</span>
-                    </div>
-
-                    {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`message ${message.sender === 'me' ? 'sent' : 'received'}`}
-                        >
-                            {message.sender === 'them' && (
-                                <div className="message-avatar">
-                                    <div className="avatar-placeholder tiny">
-                                        {getInitials(selectedContact.name)}
+                        {/* Messages Area */}
+                        <div className="messages-area">
+                            {messagesLoading ? (
+                                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-light)', opacity: 0.7 }}>
+                                    Loading messages...
+                                </div>
+                            ) : messages.length === 0 ? (
+                                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-light)', opacity: 0.7 }}>
+                                    No messages yet. Start a conversation with {selectedContact.display_name}!
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="date-divider">
+                                        <span>Today</span>
                                     </div>
-                                </div>
+                                    {messages.map((message) => {
+                                        const isSent = message.sender_id === user?.id;
+                                        const status = isSent ? getMessageStatus(message.id) : null;
+                                        const isDelivered = status?.delivered_at;
+                                        const isRead = status?.read_at;
+                                        
+                                        return (
+                                            <div
+                                                key={message.id}
+                                                className={`message ${isSent ? 'sent' : 'received'}`}
+                                            >
+                                                {!isSent && (
+                                                    <div className="message-avatar">
+                                                        <div className="avatar-placeholder tiny">
+                                                            {getInitials(selectedContact.display_name)}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <div className="message-content">
+                                                    <div className="message-bubble">
+                                                        {message.content}
+                                                    </div>
+                                                    <span className="message-time">
+                                                        {new Date(message.created_at || '').toLocaleTimeString('en-US', {
+                                                            hour: 'numeric',
+                                                            minute: '2-digit',
+                                                            hour12: true
+                                                        })}
+                                                        {isSent && (
+                                                            <span style={{ marginLeft: '0.25rem', display: 'inline-flex', alignItems: 'center' }}>
+                                                                {isRead ? (
+                                                                    <CheckCheck size={12} style={{ color: 'var(--primary)' }} />
+                                                                ) : isDelivered ? (
+                                                                    <CheckCheck size={12} style={{ opacity: 0.5 }} />
+                                                                ) : (
+                                                                    <Check size={12} style={{ opacity: 0.5 }} />
+                                                                )}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    <div ref={messagesEndRef} />
+                                </>
                             )}
-                            <div className="message-content">
-                                <div className="message-bubble">
-                                    {message.text}
-                                </div>
-                                <span className="message-time">{message.time}</span>
-                            </div>
                         </div>
-                    ))}
-                </div>
 
-                {/* Message Input */}
-                <div className="message-input-container">
-                    <form className="message-input-wrapper" onSubmit={handleSendMessage}>
+                        {/* Message Input */}
+                        <div className="message-input-container">
+                            <form className="message-input-wrapper" onSubmit={handleSendMessage}>
                         {/* Attachment Button with Dropdown */}
                         <div className="attach-wrapper" ref={attachMenuRef}>
                             <button
@@ -215,16 +280,36 @@ const DashboardPage = () => {
                                 }
                             }}
                             rows={1}
+                            disabled={sending}
                         />
                         <button type="button" className="input-action-btn">
                             <Smile size={18} />
                         </button>
-                        <button type="submit" className="send-btn">
-                            <Send size={16} />
-                        </button>
-                    </form>
-                </div>
+                                <button type="submit" className="send-btn" disabled={sending || !messageInput.trim()}>
+                                    <Send size={16} />
+                                </button>
+                            </form>
+                        </div>
+                    </>
+                ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                        <p style={{ color: 'var(--text-light)', opacity: 0.7 }}>
+                            Select a contact to start messaging
+                        </p>
+                    </div>
+                )}
             </main>
+
+            {/* Add Contact Modal */}
+            <AddContactModal
+                isOpen={showAddContact}
+                onClose={() => setShowAddContact(false)}
+                onSearch={searchUsers}
+                onAddContact={async (userId) => {
+                    await addContact(userId);
+                    setShowAddContact(false);
+                }}
+            />
         </div>
     );
 };
