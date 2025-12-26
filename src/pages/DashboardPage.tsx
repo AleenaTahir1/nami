@@ -108,10 +108,18 @@ const DashboardPage = () => {
     const { isOnline, getLastSeen } = useContactsPresence(contacts.map(c => c.user_id));
 
     // Context menu state
-    const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; position: { x: number; y: number }; messageId: string | null }>({
+    const [contextMenu, setContextMenu] = useState<{
+        isOpen: boolean;
+        position: { x: number; y: number };
+        messageId: string | null;
+        isSentByMe: boolean;
+        canEdit: boolean;
+    }>({
         isOpen: false,
         position: { x: 0, y: 0 },
         messageId: null,
+        isSentByMe: false,
+        canEdit: false
     });
 
     // Infinite scroll observer
@@ -399,7 +407,7 @@ const DashboardPage = () => {
                                         style={{
                                             padding: '0.5rem 2rem 0.5rem 0.75rem',
                                             borderRadius: '1rem',
-                                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                                            border: '1px solid var(--border-color)',
                                             fontSize: '0.875rem',
                                             width: '200px',
                                             outline: 'none',
@@ -493,6 +501,8 @@ const DashboardPage = () => {
                                                 isOpen: true,
                                                 position: { x: e.clientX, y: e.clientY },
                                                 messageId: message.id,
+                                                isSentByMe: isSent,
+                                                canEdit: canEdit
                                             });
                                         };
 
@@ -630,6 +640,8 @@ const DashboardPage = () => {
                                                                 isOpen: true,
                                                                 position: { x, y },
                                                                 messageId: message.id,
+                                                                isSentByMe: isSent,
+                                                                canEdit: canEdit
                                                             });
                                                         }}
                                                         className="message-actions-btn"
@@ -655,18 +667,7 @@ const DashboardPage = () => {
                                                     </button>
                                                 )}
 
-                                                {/* Context Menu */}
-                                                {contextMenu.isOpen && contextMenu.messageId === message.id && (
-                                                    <MessageContextMenu
-                                                        isOpen={true}
-                                                        position={contextMenu.position}
-                                                        onClose={() => setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, messageId: null })}
-                                                        isSentByMe={isSent}
-                                                        canEdit={canEdit}
-                                                        onEdit={handleStartEdit}
-                                                        onDeleteForMe={() => deleteMessageForMe(message.id)}
-                                                    />
-                                                )}
+                                                {/* Context Menu Placeholder (Moved to root) */}
                                             </div>
                                         );
                                     })}
@@ -809,6 +810,28 @@ const DashboardPage = () => {
                 onDecline={declineRequest}
                 loading={requestsLoading}
             />
+            {/* Dashboard Context Menu (Root Level to avoid clipping) */}
+            {contextMenu.isOpen && (
+                <MessageContextMenu
+                    isOpen={true}
+                    position={contextMenu.position}
+                    onClose={() => setContextMenu({ ...contextMenu, isOpen: false })}
+                    isSentByMe={contextMenu.isSentByMe}
+                    canEdit={contextMenu.canEdit}
+                    onEdit={() => {
+                        const message = messages.find(m => m.id === contextMenu.messageId);
+                        if (message) {
+                            setEditingMessageId(message.id);
+                            setEditContent(message.content);
+                        }
+                    }}
+                    onDeleteForMe={() => {
+                        if (contextMenu.messageId) {
+                            deleteMessageForMe(contextMenu.messageId);
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

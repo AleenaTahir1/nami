@@ -79,12 +79,13 @@ export function MessageContextMenu({
                 top: adjustedPosition.y,
                 left: adjustedPosition.x,
                 zIndex: 1000,
-                background: 'white',
+                background: 'var(--bg-secondary)',
                 borderRadius: '0.75rem',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
                 overflow: 'hidden',
                 minWidth: '160px',
                 animation: 'fadeInUp 0.15s ease',
+                border: '1px solid var(--border-color)',
             }}
         >
             {isSentByMe && canEdit && (
@@ -101,7 +102,7 @@ export function MessageContextMenu({
                         padding: '0.75rem 1rem',
                         border: 'none',
                         background: 'transparent',
-                        color: 'var(--muted-mauve)',
+                        color: 'var(--text-primary)',
                         fontSize: '0.875rem',
                         cursor: 'pointer',
                         transition: 'background 0.15s ease',
