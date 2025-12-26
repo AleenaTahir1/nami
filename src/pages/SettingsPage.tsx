@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     User, Lock, LogOut,
@@ -6,11 +6,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useProfile } from '../hooks/useProfile';
+import { uploadAvatar, deleteAvatar } from '../lib/avatar';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
     const { signOut, user } = useAuth();
     const { profile, loading, updateProfile } = useProfile();
+    const avatarInputRef = useRef<HTMLInputElement>(null);
     
     const [displayName, setDisplayName] = useState('');
     const [username, setUsername] = useState('');
@@ -19,6 +21,7 @@ const SettingsPage = () => {
     const [readReceipts, setReadReceipts] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     useEffect(() => {
         if (profile) {
@@ -51,6 +54,58 @@ const SettingsPage = () => {
         }
     };
 
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setSaveMessage('Image must be less than 5MB');
+            return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            setSaveMessage('Please upload an image file');
+            return;
+        }
+
+        try {
+            setUploadingAvatar(true);
+            setSaveMessage('');
+            const avatarUrl = await uploadAvatar(user.id, file);
+            await updateProfile({ avatar_url: avatarUrl });
+            setSaveMessage('Profile photo updated!');
+            setTimeout(() => setSaveMessage(''), 3000);
+        } catch (error) {
+            setSaveMessage('Failed to upload photo');
+            console.error('Error uploading avatar:', error);
+        } finally {
+            setUploadingAvatar(false);
+            if (avatarInputRef.current) {
+                avatarInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleRemoveAvatar = async () => {
+        if (!user) return;
+
+        try {
+            setUploadingAvatar(true);
+            setSaveMessage('');
+            await deleteAvatar(user.id);
+            await updateProfile({ avatar_url: null });
+            setSaveMessage('Profile photo removed');
+            setTimeout(() => setSaveMessage(''), 3000);
+        } catch (error) {
+            setSaveMessage('Failed to remove photo');
+            console.error('Error removing avatar:', error);
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
@@ -72,9 +127,17 @@ const SettingsPage = () => {
                 {/* User Mini Profile */}
                 <div className="user-mini-profile">
                     <div className="mini-avatar">
-                        <div className="avatar-placeholder">
-                            {profile?.display_name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                        </div>
+                        {profile?.avatar_url ? (
+                            <img 
+                                src={profile.avatar_url} 
+                                alt="Profile" 
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                            />
+                        ) : (
+                            <div className="avatar-placeholder">
+                                {profile?.display_name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                            </div>
+                        )}
                         <span className="online-indicator" />
                     </div>
                     <div className="mini-info">
@@ -114,22 +177,49 @@ const SettingsPage = () => {
                 <div className="settings-form">
                     {/* Avatar Section */}
                     <section className="avatar-section">
-                        <div className="avatar-edit">
+                        <div className="avatar-edit" onClick={() => avatarInputRef.current?.click()} style={{ cursor: 'pointer' }}>
                             <div className="large-avatar">
-                                <div className="avatar-placeholder large">
-                                    {profile?.display_name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                                </div>
+                                {profile?.avatar_url ? (
+                                    <img 
+                                        src={profile.avatar_url} 
+                                        alt="Profile" 
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                                    />
+                                ) : (
+                                    <div className="avatar-placeholder large">
+                                        {profile?.display_name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                    </div>
+                                )}
                             </div>
                             <div className="avatar-overlay">
                                 <Camera size={18} />
                             </div>
                         </div>
+                        <input
+                            ref={avatarInputRef}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handleAvatarChange}
+                        />
                         <div className="avatar-info">
                             <h3>Profile Photo</h3>
-                            <p>JPG or PNG. Max 2MB.</p>
+                            <p>JPG or PNG. Max 5MB.</p>
                             <div className="avatar-actions">
-                                <button className="btn-secondary">Change</button>
-                                <button className="btn-text-danger">Remove</button>
+                                <button 
+                                    className="btn-secondary" 
+                                    onClick={() => avatarInputRef.current?.click()}
+                                    disabled={uploadingAvatar}
+                                >
+                                    {uploadingAvatar ? 'Uploading...' : 'Change'}
+                                </button>
+                                <button 
+                                    className="btn-text-danger" 
+                                    onClick={handleRemoveAvatar}
+                                    disabled={uploadingAvatar || !profile?.avatar_url}
+                                >
+                                    Remove
+                                </button>
                             </div>
                         </div>
                     </section>

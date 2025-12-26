@@ -20,6 +20,24 @@ export async function markMessageAsRead(messageId: string, userId: string) {
 }
 
 export async function markConversationAsRead(userId: string, contactId: string) {
+  // First, get all message IDs from the contact to this user
+  const { data: messages, error: fetchError } = await supabase
+    .from('messages')
+    .select('id')
+    .eq('sender_id', contactId)
+    .eq('receiver_id', userId);
+
+  if (fetchError) {
+    console.error('Error fetching messages for read receipt:', fetchError);
+    return;
+  }
+
+  if (!messages || messages.length === 0) {
+    return; // No messages to mark as read
+  }
+
+  const messageIds = messages.map(m => m.id);
+
   // Mark all unread messages from the contact as read
   const { error } = await supabase
     .from('message_status')
@@ -28,16 +46,10 @@ export async function markConversationAsRead(userId: string, contactId: string) 
     })
     .eq('user_id', userId)
     .is('read_at', null)
-    .in(
-      'message_id',
-      supabase
-        .from('messages')
-        .select('id')
-        .eq('sender_id', contactId)
-        .eq('receiver_id', userId)
-    );
+    .in('message_id', messageIds);
 
   if (error) {
+    console.error('Error marking conversation as read:', error);
     throw error;
   }
 }
@@ -76,11 +88,11 @@ export function subscribeToMessageStatus(
   onStatusUpdate: (status: MessageStatus) => void
 ) {
   const channel = supabase
-    .channel('message-status-channel')
+    .channel(`message-status-${Date.now()}`)
     .on(
       'postgres_changes',
       {
-        event: 'UPDATE',
+        event: '*', // Listen to INSERT and UPDATE
         schema: 'public',
         table: 'message_status',
       },

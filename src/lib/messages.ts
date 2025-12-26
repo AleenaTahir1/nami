@@ -1,7 +1,16 @@
 import { supabase } from './supabase';
-import type { Message, MessageInsert } from './supabase-types';
+import type { Message, Attachment } from './supabase-types';
+import { uploadAttachment } from './attachments';
 
-export async function getConversationMessages(userId: string, contactId: string, limit = 50) {
+export type MessageWithAttachments = Message & {
+  attachments?: Attachment[];
+};
+
+export async function getConversationMessages(
+  userId: string,
+  contactId: string,
+  limit = 50
+): Promise<MessageWithAttachments[]> {
   const { data, error } = await supabase.rpc('get_conversation_messages', {
     p_user_id: userId,
     p_contact_id: contactId,
@@ -12,16 +21,51 @@ export async function getConversationMessages(userId: string, contactId: string,
     throw error;
   }
 
-  return data as Message[];
+  const messages = data as Message[];
+
+  // Fetch attachments for all messages
+  if (messages.length > 0) {
+    const messageIds = messages.map(m => m.id);
+    const { data: attachments, error: attachError } = await supabase
+      .from('attachments')
+      .select('*')
+      .in('message_id', messageIds);
+
+    if (!attachError && attachments) {
+      // Group attachments by message_id
+      const attachmentsByMessage = attachments.reduce((acc, att) => {
+        if (!acc[att.message_id]) acc[att.message_id] = [];
+        acc[att.message_id].push(att as Attachment);
+        return acc;
+      }, {} as Record<string, Attachment[]>);
+
+      // Add attachments to messages
+      return messages.map(msg => ({
+        ...msg,
+        attachments: attachmentsByMessage[msg.id] || [],
+      }));
+    }
+  }
+
+  return messages.map(msg => ({ ...msg, attachments: [] }));
 }
 
-export async function sendMessage(senderId: string, receiverId: string, content: string) {
+export async function sendMessage(
+  senderId: string,
+  receiverId: string,
+  content: string,
+  files?: File[]
+): Promise<MessageWithAttachments> {
+  // Use default text if content is empty and there are files
+  const messageContent = content.trim() || (files && files.length > 0 ? '📎 Attachment' : '');
+  
+  // Create the message first
   const { data, error } = await supabase
     .from('messages')
     .insert({
       sender_id: senderId,
       receiver_id: receiverId,
-      content: content.trim(),
+      content: messageContent,
     })
     .select()
     .single();
@@ -30,7 +74,24 @@ export async function sendMessage(senderId: string, receiverId: string, content:
     throw error;
   }
 
-  return data as Message;
+  const message = data as Message;
+
+  // If there are files, upload them
+  if (files && files.length > 0) {
+    const attachments: Attachment[] = [];
+    for (const file of files) {
+      try {
+        const attachment = await uploadAttachment(senderId, message.id, file);
+        attachments.push(attachment);
+      } catch (err) {
+        console.error(`Failed to upload file ${file.name}:`, err);
+        // Continue with other files even if one fails
+      }
+    }
+    return { ...message, attachments };
+  }
+
+  return { ...message, attachments: [] };
 }
 
 export async function updateMessage(messageId: string, content: string) {
@@ -67,8 +128,21 @@ export async function deleteMessage(messageId: string) {
 export function subscribeToMessages(
   userId: string,
   contactId: string,
-  onNewMessage: (message: Message) => void
+  onNewMessage: (message: MessageWithAttachments) => void
 ) {
+  const handleNewMessage = async (message: Message) => {
+    // Fetch attachments for the new message
+    const { data: attachments } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('message_id', message.id);
+
+    onNewMessage({
+      ...message,
+      attachments: (attachments as Attachment[]) || [],
+    });
+  };
+
   const channel = supabase
     .channel('messages-channel')
     .on(
@@ -83,7 +157,7 @@ export function subscribeToMessages(
         const newMessage = payload.new as Message;
         // Only process if the message is for the current user
         if (newMessage.receiver_id === userId) {
-          onNewMessage(newMessage);
+          handleNewMessage(newMessage);
         }
       }
     )
@@ -93,4 +167,3 @@ export function subscribeToMessages(
     supabase.removeChannel(channel);
   };
 }
-

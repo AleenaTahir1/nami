@@ -3,22 +3,100 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search, Phone, Video, MoreVertical,
     Paperclip, Smile, Send, Settings,
-    Image, FileText, Film, X, UserPlus, Check, CheckCheck
+    Image, FileText, Film, X, UserPlus, Check, CheckCheck, Download
 } from 'lucide-react';
 import { useContacts } from '../hooks/useContacts';
 import { useMessages } from '../hooks/useMessages';
 import { useContactsPresence } from '../hooks/useContactsPresence';
 import { useAuth } from '../contexts/AuthContext';
 import { AddContactModal } from '../components/AddContactModal';
-import type { Profile } from '../lib/supabase-types';
+import type { Profile, Attachment } from '../lib/supabase-types';
+import { getAttachmentUrl, formatFileSize, getFileIcon } from '../lib/attachments';
+
+// Attachment Display Component
+const AttachmentDisplay = ({ attachment }: { attachment: Attachment }) => {
+    const [url, setUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        getAttachmentUrl(attachment.storage_path)
+            .then(setUrl)
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [attachment.storage_path]);
+
+    if (loading) {
+        return <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>Loading attachment...</div>;
+    }
+
+    const isImage = attachment.file_type.startsWith('image/');
+
+    return (
+        <div style={{
+            padding: '0.5rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            borderRadius: '0.5rem',
+            border: '1px solid rgba(157, 23, 77, 0.1)'
+        }}>
+            {isImage && url ? (
+                <img
+                    src={url}
+                    alt={attachment.file_name}
+                    style={{
+                        maxWidth: '300px',
+                        maxHeight: '200px',
+                        borderRadius: '0.5rem',
+                        display: 'block'
+                    }}
+                />
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{getFileIcon(attachment.file_type)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {attachment.file_name}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>
+                            {formatFileSize(attachment.file_size)}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {url && (
+                <a
+                    href={url}
+                    download={attachment.file_name}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        marginTop: '0.5rem',
+                        fontSize: '0.75rem',
+                        color: 'var(--primary)',
+                        textDecoration: 'none'
+                    }}
+                >
+                    <Download size={12} />
+                    Download
+                </a>
+            )}
+        </div>
+    );
+};
 
 const DashboardPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
+    const [messageSearchQuery, setMessageSearchQuery] = useState('');
     const [messageInput, setMessageInput] = useState('');
     const [selectedContact, setSelectedContact] = useState<Profile | null>(null);
     const [showAttachMenu, setShowAttachMenu] = useState(false);
     const [showAddContact, setShowAddContact] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [fileAcceptType, setFileAcceptType] = useState<string>('*');
     const attachMenuRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
     const { user } = useAuth();
     const { contacts, loading, addContact, searchUsers } = useContacts();
@@ -45,25 +123,62 @@ const DashboardPage = () => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (messageInput.trim() && !sending) {
+        // Allow sending if there's text OR files (or both)
+        if ((messageInput.trim() || selectedFiles.length > 0) && !sending) {
             try {
-                await sendMessage(messageInput);
+                await sendMessage(messageInput.trim(), selectedFiles);
                 setMessageInput('');
+                setSelectedFiles([]);
             } catch (error) {
                 console.error('Failed to send message:', error);
             }
         }
     };
 
-    const handleAttachment = (type: string) => {
-        console.log('Attaching:', type);
+    const handleAttachmentClick = (type: 'image' | 'video' | 'document') => {
+        let acceptType = '*';
+        switch (type) {
+            case 'image':
+                acceptType = 'image/*';
+                break;
+            case 'video':
+                acceptType = 'video/*';
+                break;
+            case 'document':
+                acceptType = '.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip';
+                break;
+        }
+        setFileAcceptType(acceptType);
         setShowAttachMenu(false);
-        // TODO: Implement file picker based on type
+        // Trigger file input after setting accept type
+        setTimeout(() => fileInputRef.current?.click(), 0);
     };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        setSelectedFiles((prev) => [...prev, ...files]);
+        setShowAttachMenu(false);
+        // Reset input so same file can be selected again
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const removeFile = (index: number) => {
+        setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    };
+
 
     const getInitials = (name: string) => {
         return name.split(' ').map(n => n[0]).join('').toUpperCase();
     };
+
+    // Filter messages based on search query
+    const filteredMessages = messageSearchQuery.trim()
+        ? messages.filter(msg => 
+            msg.content.toLowerCase().includes(messageSearchQuery.toLowerCase())
+          )
+        : messages;
 
     const formatLastSeen = (date: Date) => {
         const now = new Date();
@@ -143,10 +258,18 @@ const DashboardPage = () => {
                                     className={`contact-item ${selectedContact?.id === contact.id ? 'active' : ''}`}
                                     onClick={() => setSelectedContact(contact)}
                                 >
-                                    <div className="contact-avatar">
-                                        <div className="avatar-placeholder">
-                                            {getInitials(contact.display_name)}
-                                        </div>
+                                    <div className="contact-avatar" style={{ width: '48px', height: '48px', position: 'relative', flexShrink: 0 }}>
+                                        {contact.avatar_url ? (
+                                            <img 
+                                                src={contact.avatar_url} 
+                                                alt={contact.display_name}
+                                                style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+                                            />
+                                        ) : (
+                                            <div className="avatar-placeholder">
+                                                {getInitials(contact.display_name)}
+                                            </div>
+                                        )}
                                         {online && <span className="online-indicator" />}
                                     </div>
                                     <div className="contact-info">
@@ -180,10 +303,18 @@ const DashboardPage = () => {
                         {/* Chat Header */}
                         <header className="chat-header">
                             <div className="chat-user-info">
-                                <div className="chat-avatar">
-                                    <div className="avatar-placeholder small">
-                                        {getInitials(selectedContact.display_name)}
-                                    </div>
+                                <div className="chat-avatar" style={{ width: '40px', height: '40px', position: 'relative', flexShrink: 0 }}>
+                                    {selectedContact.avatar_url ? (
+                                        <img 
+                                            src={selectedContact.avatar_url} 
+                                            alt={selectedContact.display_name}
+                                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+                                        />
+                                    ) : (
+                                        <div className="avatar-placeholder small">
+                                            {getInitials(selectedContact.display_name)}
+                                        </div>
+                                    )}
                                     {isOnline(selectedContact.user_id) && <span className="online-indicator small" />}
                                 </div>
                                 <div>
@@ -194,6 +325,42 @@ const DashboardPage = () => {
                                 </div>
                             </div>
                     <div className="chat-actions">
+                        <div style={{ position: 'relative', marginRight: '0.5rem' }}>
+                            <input
+                                type="text"
+                                placeholder="Search messages..."
+                                value={messageSearchQuery}
+                                onChange={(e) => setMessageSearchQuery(e.target.value)}
+                                style={{
+                                    padding: '0.5rem 2rem 0.5rem 0.75rem',
+                                    borderRadius: '1rem',
+                                    border: '1px solid rgba(157, 23, 77, 0.2)',
+                                    fontSize: '0.875rem',
+                                    width: '200px',
+                                    outline: 'none'
+                                }}
+                            />
+                            {messageSearchQuery && (
+                                <button
+                                    onClick={() => setMessageSearchQuery('')}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '0.5rem',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '0.25rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        color: 'var(--muted-mauve)'
+                                    }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
                         <button className="action-btn">
                             <Phone size={16} />
                         </button>
@@ -207,21 +374,31 @@ const DashboardPage = () => {
                 </header>
 
                         {/* Messages Area */}
-                        <div className="messages-area">
+                        <div className="messages-area" style={{ 
+                            overflowY: 'auto', 
+                            flex: 1, 
+                            padding: '1.5rem',
+                            paddingBottom: '2rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem'
+                        }}>
                             {messagesLoading ? (
                                 <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-light)', opacity: 0.7 }}>
                                     Loading messages...
                                 </div>
-                            ) : messages.length === 0 ? (
+                            ) : filteredMessages.length === 0 ? (
                                 <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-light)', opacity: 0.7 }}>
-                                    No messages yet. Start a conversation with {selectedContact.display_name}!
+                                    {messageSearchQuery ? 'No messages found' : `No messages yet. Start a conversation with ${selectedContact.display_name}!`}
                                 </div>
                             ) : (
                                 <>
-                                    <div className="date-divider">
-                                        <span>Today</span>
-                                    </div>
-                                    {messages.map((message) => {
+                                    {!messageSearchQuery && (
+                                        <div className="date-divider">
+                                            <span>Today</span>
+                                        </div>
+                                    )}
+                                    {filteredMessages.map((message) => {
                                         const isSent = message.sender_id === user?.id;
                                         const status = isSent ? getMessageStatus(message.id) : null;
                                         const isDelivered = status?.delivered_at;
@@ -233,15 +410,32 @@ const DashboardPage = () => {
                                                 className={`message ${isSent ? 'sent' : 'received'}`}
                                             >
                                                 {!isSent && (
-                                                    <div className="message-avatar">
-                                                        <div className="avatar-placeholder tiny">
-                                                            {getInitials(selectedContact.display_name)}
-                                                        </div>
+                                                    <div className="message-avatar" style={{ width: '28px', height: '28px', flexShrink: 0 }}>
+                                                        {selectedContact.avatar_url ? (
+                                                            <img 
+                                                                src={selectedContact.avatar_url} 
+                                                                alt={selectedContact.display_name}
+                                                                style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+                                                            />
+                                                        ) : (
+                                                            <div className="avatar-placeholder tiny">
+                                                                {getInitials(selectedContact.display_name)}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                                 <div className="message-content">
                                                     <div className="message-bubble">
                                                         {message.content}
+                                                        
+                                                        {/* Display attachments */}
+                                                        {message.attachments && message.attachments.length > 0 && (
+                                                            <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                                {message.attachments.map((attachment) => (
+                                                                    <AttachmentDisplay key={attachment.id} attachment={attachment} />
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <span className="message-time">
                                                         {new Date(message.created_at || '').toLocaleTimeString('en-US', {
@@ -265,6 +459,8 @@ const DashboardPage = () => {
                                             </div>
                                         );
                                     })}
+                                    {/* Spacer to ensure last message is visible above input */}
+                                    <div style={{ minHeight: '1rem' }} />
                                     <div ref={messagesEndRef} />
                                 </>
                             )}
@@ -272,6 +468,47 @@ const DashboardPage = () => {
 
                         {/* Message Input */}
                         <div className="message-input-container">
+                            {/* File Preview */}
+                            {selectedFiles.length > 0 && (
+                                <div style={{ 
+                                    padding: '0.75rem 1rem', 
+                                    borderTop: '1px solid rgba(157, 23, 77, 0.1)',
+                                    display: 'flex',
+                                    gap: '0.5rem',
+                                    flexWrap: 'wrap',
+                                    backgroundColor: 'rgba(244, 113, 181, 0.05)'
+                                }}>
+                                    {selectedFiles.map((file, index) => (
+                                        <div key={index} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            padding: '0.5rem',
+                                            backgroundColor: 'white',
+                                            borderRadius: '0.5rem',
+                                            fontSize: '0.875rem',
+                                            border: '1px solid rgba(157, 23, 77, 0.2)'
+                                        }}>
+                                            <span>{file.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFile(index)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    padding: '0.25rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    color: 'var(--muted-mauve)'
+                                                }}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             <form className="message-input-wrapper" onSubmit={handleSendMessage}>
                         {/* Attachment Button with Dropdown */}
                         <div className="attach-wrapper" ref={attachMenuRef}>
@@ -285,20 +522,30 @@ const DashboardPage = () => {
 
                             {showAttachMenu && (
                                 <div className="attach-menu">
-                                    <button type="button" onClick={() => handleAttachment('image')}>
+                                    <button type="button" onClick={() => handleAttachmentClick('image')}>
                                         <Image size={18} />
                                         <span>Photo</span>
                                     </button>
-                                    <button type="button" onClick={() => handleAttachment('video')}>
+                                    <button type="button" onClick={() => handleAttachmentClick('video')}>
                                         <Film size={18} />
                                         <span>Video</span>
                                     </button>
-                                    <button type="button" onClick={() => handleAttachment('document')}>
+                                    <button type="button" onClick={() => handleAttachmentClick('document')}>
                                         <FileText size={18} />
                                         <span>Document</span>
                                     </button>
                                 </div>
                             )}
+                            
+                            {/* Hidden file input */}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                accept={fileAcceptType}
+                                style={{ display: 'none' }}
+                                onChange={handleFileSelect}
+                            />
                         </div>
 
                         <textarea
