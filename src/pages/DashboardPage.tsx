@@ -368,7 +368,7 @@ const DashboardPage = () => {
                                         <div className="contact-header">
                                             <h3 className="contact-name">{contact.display_name}</h3>
                                             <span className="contact-time">
-                                                {online ? '🟢' : lastSeen ? formatLastSeen(lastSeen) : ''}
+                                                {online ? '' : lastSeen ? formatLastSeen(lastSeen) : ''}
                                             </span>
                                         </div>
                                         <p className="contact-message">@{contact.username}</p>
