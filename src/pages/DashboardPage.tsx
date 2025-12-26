@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search, Phone, Video, MoreVertical,
     Paperclip, Smile, Send, Settings,
-    Image, FileText, Film, X, UserPlus, Check, CheckCheck, Download
+    Image, FileText, Film, X, UserPlus, Check, CheckCheck, Download, Trash2
 } from 'lucide-react';
 import { useContacts } from '../hooks/useContacts';
 import { useMessages } from '../hooks/useMessages';
 import { useContactsPresence } from '../hooks/useContactsPresence';
 import { useAuth } from '../contexts/AuthContext';
+import ConfirmModal from '../components/ConfirmModal';
 import { AddContactModal } from '../components/AddContactModal';
 import { MessageContextMenu } from '../components/MessageContextMenu';
 import { ContactRequestsModal } from '../components/ContactRequestsModal';
@@ -104,7 +105,7 @@ const DashboardPage = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { contacts, requests, loading, requestsLoading, addContact, searchUsers, acceptRequest, declineRequest } = useContacts();
-    const { messages, loading: messagesLoading, sending, sendMessage, deleteMessageForMe, editMessage, messagesEndRef, getMessageStatus, loadMore, hasMore, loadingMore } = useMessages(selectedContact?.user_id || null);
+    const { messages, loading: messagesLoading, sending, sendMessage, deleteMessageForMe, editMessage, messagesEndRef, getMessageStatus, loadMore, hasMore, loadingMore, clearChat } = useMessages(selectedContact?.user_id || null);
     const { isOnline, getLastSeen } = useContactsPresence(contacts.map(c => c.user_id));
 
     // Context menu state
@@ -121,6 +122,24 @@ const DashboardPage = () => {
         isSentByMe: false,
         canEdit: false
     });
+
+    const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+    const headerMenuRef = useRef<HTMLDivElement>(null);
+
+    // Close header menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (headerMenuRef.current && !headerMenuRef.current.contains(event.target as Node)) {
+                setHeaderMenuOpen(false);
+            }
+        };
+        if (headerMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [headerMenuOpen]);
+
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     // Infinite scroll observer
     useEffect(() => {
@@ -442,9 +461,58 @@ const DashboardPage = () => {
                                 <button className="action-btn">
                                     <Video size={16} />
                                 </button>
-                                <button className="action-btn">
-                                    <MoreVertical size={16} />
-                                </button>
+                                <div style={{ position: 'relative' }}>
+                                    <button
+                                        className="action-btn"
+                                        onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
+                                    >
+                                        <MoreVertical size={16} />
+                                    </button>
+
+                                    {headerMenuOpen && (
+                                        <div
+                                            ref={headerMenuRef}
+                                            style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                right: '0',
+                                                marginTop: '0.5rem',
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-color)',
+                                                borderRadius: '0.75rem',
+                                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                                                zIndex: 1000,
+                                                minWidth: '180px',
+                                                overflow: 'hidden'
+                                            }}
+                                        >
+                                            <button
+                                                onClick={() => {
+                                                    setHeaderMenuOpen(false);
+                                                    setShowDeleteConfirm(true);
+                                                }}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.75rem',
+                                                    width: '100%',
+                                                    padding: '0.75rem 1rem',
+                                                    border: 'none',
+                                                    background: 'transparent',
+                                                    color: '#ef4444',
+                                                    fontSize: '0.875rem',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left'
+                                                }}
+                                                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)')}
+                                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                            >
+                                                <Trash2 size={16} />
+                                                <span>Delete all messages</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </header>
 
@@ -504,11 +572,6 @@ const DashboardPage = () => {
                                                 isSentByMe: isSent,
                                                 canEdit: canEdit
                                             });
-                                        };
-
-                                        const handleStartEdit = () => {
-                                            setEditingMessageId(message.id);
-                                            setEditContent(message.content);
                                         };
 
                                         const handleSaveEdit = async () => {
@@ -811,27 +874,47 @@ const DashboardPage = () => {
                 loading={requestsLoading}
             />
             {/* Dashboard Context Menu (Root Level to avoid clipping) */}
-            {contextMenu.isOpen && (
-                <MessageContextMenu
-                    isOpen={true}
-                    position={contextMenu.position}
-                    onClose={() => setContextMenu({ ...contextMenu, isOpen: false })}
-                    isSentByMe={contextMenu.isSentByMe}
-                    canEdit={contextMenu.canEdit}
-                    onEdit={() => {
-                        const message = messages.find(m => m.id === contextMenu.messageId);
-                        if (message) {
-                            setEditingMessageId(message.id);
-                            setEditContent(message.content);
-                        }
-                    }}
-                    onDeleteForMe={() => {
-                        if (contextMenu.messageId) {
-                            deleteMessageForMe(contextMenu.messageId);
-                        }
-                    }}
-                />
-            )}
+            {
+                contextMenu.isOpen && (
+                    <MessageContextMenu
+                        isOpen={true}
+                        position={contextMenu.position}
+                        onClose={() => setContextMenu({ ...contextMenu, isOpen: false })}
+                        isSentByMe={contextMenu.isSentByMe}
+                        canEdit={contextMenu.canEdit}
+                        onEdit={() => {
+                            const message = messages.find(m => m.id === contextMenu.messageId);
+                            if (message) {
+                                setEditingMessageId(message.id);
+                                setEditContent(message.content);
+                            }
+                        }}
+                        onDeleteForMe={() => {
+                            if (contextMenu.messageId) {
+                                deleteMessageForMe(contextMenu.messageId);
+                            }
+                        }}
+                    />
+                )
+            }
+            {/* Deletion Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={async () => {
+                    try {
+                        await clearChat();
+                        setShowDeleteConfirm(false);
+                    } catch (err) {
+                        console.error('Failed to clear chat:', err);
+                    }
+                }}
+                title="Delete Chat History"
+                message="Are you sure you want to delete all messages? This cannot be undone."
+                confirmText="Delete All"
+                cancelText="Keep Messages"
+                type="danger"
+            />
         </div>
     );
 };

@@ -127,6 +127,19 @@ export async function deleteMessage(messageId: string) {
   }
 }
 
+export async function deleteAllMessages(userId: string, contactId: string) {
+  // Use a slightly more robust query structure for bulk deletion
+  const { error } = await supabase
+    .from('messages')
+    .update({ deleted: true })
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+    .or(`sender_id.eq.${contactId},receiver_id.eq.${contactId}`);
+
+  if (error) {
+    throw error;
+  }
+}
+
 export function subscribeToMessages(
   userId: string,
   contactId: string,

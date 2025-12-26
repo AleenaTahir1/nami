@@ -4,6 +4,7 @@ import {
   sendMessage as sendMessageApi,
   updateMessage as updateMessageApi,
   deleteMessage as deleteMessageApi,
+  deleteAllMessages,
   subscribeToMessages,
   type MessageWithAttachments,
 } from '../lib/messages';
@@ -278,6 +279,21 @@ export function useMessages(contactId: string | null) {
     }
   };
 
+  // Clear entire chat history
+  const clearChat = async () => {
+    if (!user || !contactId) return;
+    try {
+      await deleteAllMessages(user.id, contactId);
+      // Locally mark all as deleted or just clear?
+      // Mark as deleted to maintain the "deleted message" bars if desired, 
+      // but usually "Clear Chat" clears the screen.
+      setMessages([]);
+    } catch (err) {
+      console.error('Error clearing chat:', err);
+      throw err;
+    }
+  };
+
   return {
     messages,
     loading,
@@ -286,6 +302,7 @@ export function useMessages(contactId: string | null) {
     sendMessage,
     deleteMessageForMe,
     deleteMessageForEveryone,
+    clearChat,
     editMessage,
     messagesEndRef,
     getMessageStatus,
