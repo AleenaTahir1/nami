@@ -15,12 +15,18 @@
 
   /* Text Colors */
   --muted-mauve: #9D174D;
-  --text-light: #f6f6f6;
+  --text-primary: #0f0f0f;
+  --text-secondary: #9D174D;
+  --text-light: rgba(157, 23, 77, 0.7);
+  /* Improved contrast for light mode */
+  --text-muted: rgba(157, 23, 77, 0.5);
+  --text-white: #ffffff;
   --text-dark: #0f0f0f;
 
   /* Glass Effects */
   --glass-bg: rgba(255, 255, 255, 0.65);
   --glass-border: rgba(255, 255, 255, 0.8);
+  --border-color: rgba(157, 23, 77, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(157, 23, 77, 0.1);
 
   /* Spacing */
@@ -41,8 +47,6 @@
   /* Active Theme Colors (defaults to light) */
   --bg-primary: #FFF1F2;
   --bg-secondary: #ffffff;
-  --text-primary: #0f0f0f;
-  --text-secondary: #9D174D;
 }
 
 /* Dark Theme - Pure Black and White */
@@ -58,12 +62,14 @@
   /* Remove all glass effects - solid black */
   --glass-bg: #000000;
   --glass-border: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(255, 255, 255, 0.1);
   --glass-shadow: none;
 
   /* Override all color variables to black/white */
   --background-light: #000000;
   --background-dark: #000000;
   --muted-mauve: #ffffff;
+  --text-light: #ffffff;
 
   /* Keep primary pink for buttons/accents only */
   --primary: #f471b5;
@@ -1015,13 +1021,12 @@ a:hover {
 .message-time {
   font-size: 0.65rem;
   color: rgba(157, 23, 77, 0.4);
-  opacity: 0;
+  opacity: 1;
+  /* Always visible */
   transition: opacity 0.2s ease;
 }
 
-.message:hover .message-time {
-  opacity: 1;
-}
+/* Removed hover dependency for message-time */
 
 /* Message Input - Fixed at bottom */
 .message-input-container {
@@ -1175,7 +1180,7 @@ a:hover {
   padding: 1rem;
   background: var(--bg-secondary);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
   backdrop-filter: none;
 }
 
@@ -1188,14 +1193,14 @@ a:hover {
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--muted-mauve);
+  color: var(--text-primary);
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .back-btn:hover {
-  background: rgba(244, 113, 181, 0.1);
+  background: var(--bg-secondary);
   color: var(--primary);
 }
 
@@ -1231,12 +1236,12 @@ a:hover {
 .mini-info h2 {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--muted-mauve);
+  color: var(--text-primary);
 }
 
 .mini-info p {
   font-size: 0.75rem;
-  color: rgba(157, 23, 77, 0.5);
+  color: var(--text-light);
 }
 
 .settings-nav {
@@ -1253,7 +1258,7 @@ a:hover {
   border: none;
   border-radius: var(--radius-lg);
   background: transparent;
-  color: rgba(157, 23, 77, 0.7);
+  color: var(--text-light);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -1261,20 +1266,20 @@ a:hover {
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--muted-mauve);
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .nav-item.active {
-  background: var(--bg-secondary);
-  color: var(--primary);
+  background: var(--primary);
+  color: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .settings-sidebar-footer {
   margin-top: auto;
   padding-top: 1rem;
-  border-top: 1px solid rgba(157, 23, 77, 0.1);
+  border-top: 1px solid var(--border-color);
 }
 
 .logout-btn {
@@ -1286,7 +1291,7 @@ a:hover {
   border: none;
   border-radius: var(--radius-lg);
   background: transparent;
-  color: rgba(157, 23, 77, 0.7);
+  color: var(--text-light);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -1301,7 +1306,8 @@ a:hover {
 .version {
   text-align: center;
   font-size: 0.625rem;
-  color: rgba(157, 23, 77, 0.3);
+  color: var(--text-light);
+  opacity: 0.5;
   margin-top: 1rem;
 }
 
@@ -1311,7 +1317,7 @@ a:hover {
   flex-direction: column;
   background: var(--bg-secondary);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
   backdrop-filter: none;
   overflow: hidden;
 }
@@ -1323,12 +1329,12 @@ a:hover {
 .settings-header h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--muted-mauve);
+  color: var(--text-primary);
 }
 
 .settings-header p {
   font-size: 0.875rem;
-  color: rgba(157, 23, 77, 0.6);
+  color: var(--text-light);
   margin-top: 0.25rem;
 }
 
@@ -1343,9 +1349,9 @@ a:hover {
   gap: 1.5rem;
   align-items: flex-start;
   padding: 1.5rem;
-  background: rgba(255, 241, 242, 0.5);
+  background: var(--bg-primary);
   border-radius: var(--radius-xl);
-  border: 1px solid white;
+  border: 1px solid var(--border-color);
 }
 
 .avatar-edit {
@@ -1394,12 +1400,12 @@ a:hover {
 .avatar-info h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--muted-mauve);
+  color: var(--text-primary);
 }
 
 .avatar-info p {
   font-size: 0.8rem;
-  color: rgba(157, 23, 77, 0.6);
+  color: var(--text-light);
   margin-top: 0.25rem;
 }
 
@@ -1407,6 +1413,53 @@ a:hover {
   display: flex;
   gap: 0.75rem;
   margin-top: 0.75rem;
+}
+
+/* Theme Toggle styles */
+.theme-toggle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 400px;
+}
+
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  text-align: left;
+}
+
+.theme-btn:hover {
+  background: var(--bg-primary);
+  transform: translateX(4px);
+}
+
+.theme-btn.active {
+  border-color: var(--primary);
+  background: var(--bg-primary);
+}
+
+.active-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  margin-left: auto;
+  box-shadow: 0 0 10px var(--primary);
+}
+
+.theme-btn span {
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .btn-secondary {
@@ -1745,8 +1798,37 @@ a:hover {
   }
 
   .contact-item.active {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  /* Sidebar Vertical Border */
+  .sidebar {
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Contact List Contrast Fixes */
+  .contact-message,
+  .contact-time,
+  .chat-status-text {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .contact-item:hover {
     background: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .contact-name {
+    color: #ffffff !important;
+  }
+
+  /* Message Time and Status */
+  .message-time {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+
+  .message.sent .message-time {
+    color: rgba(255, 255, 255, 0.8) !important;
   }
 
   /* Settings Sections */
@@ -1848,5 +1930,71 @@ a:hover {
 
   .search-input::placeholder {
     color: rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Avatars - White on Black */
+  .avatar-placeholder,
+  .mini-avatar {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Settings Button */
+  .settings-btn {
+    color: #ffffff !important;
+  }
+
+  .settings-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+  }
+
+  /* Message Textarea */
+  .message-textarea {
+    color: #ffffff !important;
+    background: transparent !important;
+  }
+
+  .message-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* All Lucide Icons and SVGs - Force White */
+  svg,
+  .lucide,
+  button svg,
+  button .lucide,
+  .action-btn,
+  .input-action-btn,
+  .attach-btn,
+  .emoji-btn,
+  .search-icon {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  /* EXCEPT for highlights which are black on white */
+  .btn-primary svg,
+  .btn-primary .lucide,
+  .add-contact-btn svg,
+  .search-wrapper .search-icon,
+  .avatar-placeholder {
+    color: #000000 !important;
+    stroke: #000000 !important;
+  }
+
+  /* All Placeholders */
+  ::placeholder,
+  .message-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  .search-input::placeholder {
+    color: rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Settings Scrollbar and other minor elements */
+  .divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
 }

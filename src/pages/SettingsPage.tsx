@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     User, Lock, LogOut,
-    Eye, Mail, Camera, ChevronLeft, Palette
+    Eye, Mail, Camera, ChevronLeft, Palette, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useProfile } from '../hooks/useProfile';
@@ -368,74 +368,28 @@ const SettingsPage = () => {
                         {/* Theme Selection */}
                         <section className="theme-section">
                             <h3>Theme</h3>
-                            <p style={{ color: 'var(--text-light)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                                Choose your preferred color scheme
+                            <p style={{ color: 'var(--text-light)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                                Choose your preferred color scheme for the application.
                             </p>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                {/* Light Theme Card */}
-                                <div
+                            <div className="theme-toggle-container">
+                                <button
+                                    className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
                                     onClick={() => handleThemeChange('light')}
-                                    style={{
-                                        padding: '1.5rem',
-                                        border: theme === 'light' ? '2px solid var(--primary)' : '2px solid rgba(157, 23, 77, 0.1)',
-                                        borderRadius: '0.75rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        background: theme === 'light' ? 'rgba(244, 113, 181, 0.05)' : 'var(--bg-secondary)'
-                                    }}
                                 >
-                                    <div style={{
-                                        width: '100%',
-                                        height: '120px',
-                                        borderRadius: '0.5rem',
-                                        background: 'linear-gradient(135deg, #fff1f2 0%, #ffffff 100%)',
-                                        marginBottom: '1rem',
-                                        border: '1px solid rgba(157, 23, 77, 0.1)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '2rem'
-                                    }}>
-                                        ☀️
-                                    </div>
-                                    <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)' }}>Light</h4>
-                                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-light)' }}>
-                                        Bright and clean
-                                    </p>
-                                </div>
+                                    <Sun size={18} />
+                                    <span>Light</span>
+                                    {theme === 'light' && <div className="active-dot" />}
+                                </button>
 
-                                {/* Dark Theme Card */}
-                                <div
+                                <button
+                                    className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
                                     onClick={() => handleThemeChange('dark')}
-                                    style={{
-                                        padding: '1.5rem',
-                                        border: theme === 'dark' ? '2px solid var(--primary)' : '2px solid rgba(157, 23, 77, 0.1)',
-                                        borderRadius: '0.75rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        background: theme === 'dark' ? 'rgba(244, 113, 181, 0.05)' : 'var(--bg-secondary)'
-                                    }}
                                 >
-                                    <div style={{
-                                        width: '100%',
-                                        height: '120px',
-                                        borderRadius: '0.5rem',
-                                        background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
-                                        marginBottom: '1rem',
-                                        border: '1px solid rgba(157, 23, 77, 0.1)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '2rem'
-                                    }}>
-                                        🌙
-                                    </div>
-                                    <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)' }}>Dark</h4>
-                                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-light)' }}>
-                                        Easy on the eyes
-                                    </p>
-                                </div>
+                                    <Moon size={18} />
+                                    <span>Dark</span>
+                                    {theme === 'dark' && <div className="active-dot" />}
+                                </button>
                             </div>
                         </section>
                     </div>

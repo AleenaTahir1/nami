@@ -399,10 +399,12 @@ const DashboardPage = () => {
                                         style={{
                                             padding: '0.5rem 2rem 0.5rem 0.75rem',
                                             borderRadius: '1rem',
-                                            border: '1px solid rgba(157, 23, 77, 0.2)',
+                                            border: '1px solid rgba(255, 255, 255, 0.3)',
                                             fontSize: '0.875rem',
                                             width: '200px',
-                                            outline: 'none'
+                                            outline: 'none',
+                                            backgroundColor: 'var(--bg-secondary)',
+                                            color: 'var(--text-primary)'
                                         }}
                                     />
                                     {messageSearchQuery && (
