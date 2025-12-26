@@ -40,6 +40,12 @@ export function useContacts() {
       throw new Error('No user logged in');
     }
 
+    // Check if already a contact
+    const alreadyContact = contacts.some(c => c.user_id === contactUserId);
+    if (alreadyContact) {
+      throw new Error('This user is already your contact');
+    }
+
     try {
       await addContactApi(user.id, contactUserId);
       await loadContacts(); // Reload contacts

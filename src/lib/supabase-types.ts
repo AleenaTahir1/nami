@@ -295,7 +295,16 @@ export type MessageStatus = Database['public']['Tables']['message_status']['Row'
 export type MessageStatusInsert = Database['public']['Tables']['message_status']['Insert'];
 export type MessageStatusUpdate = Database['public']['Tables']['message_status']['Update'];
 
+export type UserPresence = Database['public']['Tables']['user_presence']['Row'];
+export type UserPresenceInsert = Database['public']['Tables']['user_presence']['Insert'];
+export type UserPresenceUpdate = Database['public']['Tables']['user_presence']['Update'];
+
 // Extended message with status
 export type MessageWithStatus = Message & {
   status?: MessageStatus;
+};
+
+// Extended profile with presence
+export type ProfileWithPresence = Profile & {
+  presence?: UserPresence;
 };

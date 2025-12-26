@@ -7,12 +7,16 @@ import DashboardPage from './pages/DashboardPage';
 import SettingsPage from './pages/SettingsPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { usePresence } from './hooks/usePresence';
 import './App.css';
 
 // Layout wrapper to conditionally show blobs
 const AppLayout = () => {
   const location = useLocation();
   const showBlobs = ['/', '/create-account'].includes(location.pathname);
+  
+  // Track user presence
+  usePresence();
 
   return (
     <>

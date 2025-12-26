@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useContacts } from '../hooks/useContacts';
 import { useMessages } from '../hooks/useMessages';
+import { useContactsPresence } from '../hooks/useContactsPresence';
 import { useAuth } from '../contexts/AuthContext';
 import { AddContactModal } from '../components/AddContactModal';
 import type { Profile } from '../lib/supabase-types';
@@ -22,6 +23,7 @@ const DashboardPage = () => {
     const { user } = useAuth();
     const { contacts, loading, addContact, searchUsers } = useContacts();
     const { messages, loading: messagesLoading, sending, sendMessage, messagesEndRef, getMessageStatus } = useMessages(selectedContact?.user_id || null);
+    const { isOnline, getLastSeen } = useContactsPresence(contacts.map(c => c.user_id));
 
     // Set initial selected contact
     useEffect(() => {
@@ -63,7 +65,29 @@ const DashboardPage = () => {
         return name.split(' ').map(n => n[0]).join('').toUpperCase();
     };
 
-    const filteredContacts = contacts.filter(contact =>
+    const formatLastSeen = (date: Date) => {
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+
+        if (minutes < 1) return 'just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        if (days < 7) return `${days}d ago`;
+        return date.toLocaleDateString();
+    };
+
+    // Remove duplicates and filter by search query
+    const uniqueContacts = contacts.reduce((acc, contact) => {
+        if (!acc.find(c => c.user_id === contact.user_id)) {
+            acc.push(contact);
+        }
+        return acc;
+    }, [] as Profile[]);
+
+    const filteredContacts = uniqueContacts.filter(contact =>
         contact.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         contact.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -109,26 +133,34 @@ const DashboardPage = () => {
                             {contacts.length === 0 ? 'No contacts yet. Add some!' : 'No contacts found'}
                         </div>
                     ) : (
-                        filteredContacts.map((contact) => (
-                            <div
-                                key={contact.id}
-                                className={`contact-item ${selectedContact?.id === contact.id ? 'active' : ''}`}
-                                onClick={() => setSelectedContact(contact)}
-                            >
-                                <div className="contact-avatar">
-                                    <div className="avatar-placeholder">
-                                        {getInitials(contact.display_name)}
+                        filteredContacts.map((contact) => {
+                            const online = isOnline(contact.user_id);
+                            const lastSeen = getLastSeen(contact.user_id);
+                            
+                            return (
+                                <div
+                                    key={contact.id}
+                                    className={`contact-item ${selectedContact?.id === contact.id ? 'active' : ''}`}
+                                    onClick={() => setSelectedContact(contact)}
+                                >
+                                    <div className="contact-avatar">
+                                        <div className="avatar-placeholder">
+                                            {getInitials(contact.display_name)}
+                                        </div>
+                                        {online && <span className="online-indicator" />}
+                                    </div>
+                                    <div className="contact-info">
+                                        <div className="contact-header">
+                                            <h3 className="contact-name">{contact.display_name}</h3>
+                                            <span className="contact-time">
+                                                {online ? '🟢' : lastSeen ? formatLastSeen(lastSeen) : ''}
+                                            </span>
+                                        </div>
+                                        <p className="contact-message">@{contact.username}</p>
                                     </div>
                                 </div>
-                                <div className="contact-info">
-                                    <div className="contact-header">
-                                        <h3 className="contact-name">{contact.display_name}</h3>
-                                        <span className="contact-time">-</span>
-                                    </div>
-                                    <p className="contact-message">@{contact.username}</p>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
 
@@ -152,11 +184,12 @@ const DashboardPage = () => {
                                     <div className="avatar-placeholder small">
                                         {getInitials(selectedContact.display_name)}
                                     </div>
+                                    {isOnline(selectedContact.user_id) && <span className="online-indicator small" />}
                                 </div>
                                 <div>
                                     <h2 className="chat-user-name">{selectedContact.display_name}</h2>
                                     <span className="chat-status-text">
-                                        @{selectedContact.username}
+                                        {isOnline(selectedContact.user_id) ? 'Online' : `@${selectedContact.username}`}
                                     </span>
                                 </div>
                             </div>
