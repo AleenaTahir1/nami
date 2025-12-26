@@ -82,7 +82,7 @@ const CreateAccountPage = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 autoComplete="new-password"
-                                style={{ height: '2.25rem', fontSize: '0.8rem', paddingLeft: '2.25rem' }}
+                                style={{ height: '2.25rem', fontSize: '0.8rem', paddingLeft: '2.25rem', paddingRight: '2.5rem' }}
                             />
                             <button
                                 type="button"

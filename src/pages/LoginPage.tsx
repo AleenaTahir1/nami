@@ -65,7 +65,7 @@ const LoginPage = () => {
                                     setError('');
                                 }}
                                 autoComplete="current-password"
-                                style={{ height: '2.5rem', fontSize: '0.875rem', paddingLeft: '2.5rem' }}
+                                style={{ height: '2.5rem', fontSize: '0.875rem', paddingLeft: '2.5rem', paddingRight: '2.75rem' }}
                             />
                             <button
                                 type="button"

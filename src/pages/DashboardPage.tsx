@@ -203,12 +203,18 @@ const DashboardPage = () => {
                             )}
                         </div>
 
-                        <input
-                            type="text"
-                            className="message-input"
+                        <textarea
+                            className="message-textarea"
                             placeholder="Type a message..."
                             value={messageInput}
                             onChange={(e) => setMessageInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage(e);
+                                }
+                            }}
+                            rows={1}
                         />
                         <button type="button" className="input-action-btn">
                             <Smile size={18} />
