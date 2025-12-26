@@ -9,12 +9,14 @@ export type MessageWithAttachments = Message & {
 export async function getConversationMessages(
   userId: string,
   contactId: string,
-  limit = 50
+  limit = 50,
+  before: string | null = null
 ): Promise<MessageWithAttachments[]> {
   const { data, error } = await supabase.rpc('get_conversation_messages', {
     p_user_id: userId,
     p_contact_id: contactId,
     p_limit: limit,
+    p_before: before,
   });
 
   if (error) {
@@ -58,7 +60,7 @@ export async function sendMessage(
 ): Promise<MessageWithAttachments> {
   // Use default text if content is empty and there are files
   const messageContent = content.trim() || (files && files.length > 0 ? '📎 Attachment' : '');
-  
+
   // Create the message first
   const { data, error } = await supabase
     .from('messages')

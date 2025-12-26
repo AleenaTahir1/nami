@@ -23,6 +23,10 @@ export function useMessages(contactId: string | null) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
+
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (user && contactId) {
@@ -42,6 +46,8 @@ export function useMessages(contactId: string | null) {
     } else {
       setMessages([]);
       setMessageStatuses(new Map());
+      setHasMore(false);
+      lastMessageIdRef.current = null;
     }
   }, [user, contactId]);
 
@@ -61,7 +67,7 @@ export function useMessages(contactId: string | null) {
     return unsubscribe;
   }, [messages.map(m => m.id).join(',')]); // Only re-subscribe when message IDs change
 
-  // Auto-scroll when messages load or contact changes
+  // Auto-scroll when messages load (Initial Load)
   useEffect(() => {
     if (messages.length > 0 && !loading) {
       // Longer delay to ensure DOM is fully updated after loading
@@ -70,17 +76,24 @@ export function useMessages(contactId: string | null) {
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [contactId, loading]); // Trigger when contact changes or loading completes
+  }, [contactId, loading]); // Remove loadingMore from dependency
 
-  // Also scroll when new messages arrive (not initial load)
-  const prevMessageCountRef = useRef(0);
+  // Also scroll when new messages arrive (New Message / Sent Message)
   useEffect(() => {
-    if (messages.length > prevMessageCountRef.current && prevMessageCountRef.current > 0) {
-      // New message arrived, smooth scroll
-      scrollToBottom(true);
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      const lastMessageId = lastMessage.id;
+
+      // If we have a last message recorded, and the new last message is different
+      // it means we received or sent a new message (appended to bottom).
+      // If we just loaded more history (prepended), the last message ID stays the same.
+      if (lastMessageIdRef.current && lastMessageId !== lastMessageIdRef.current) {
+        scrollToBottom(true);
+      }
+
+      lastMessageIdRef.current = lastMessageId;
     }
-    prevMessageCountRef.current = messages.length;
-  }, [messages.length]);
+  }, [messages]);
 
   const loadMessages = async () => {
     if (!user || !contactId) return;
@@ -88,8 +101,19 @@ export function useMessages(contactId: string | null) {
     try {
       setLoading(true);
       setError(null);
-      const data = await getConversationMessages(user.id, contactId);
+      setHasMore(true);
+      const limit = 20;
+      const data = await getConversationMessages(user.id, contactId, limit);
+
       setMessages(data);
+      if (data.length < limit) {
+        setHasMore(false);
+      }
+
+      // Update last message ref immediately after load
+      if (data.length > 0) {
+        lastMessageIdRef.current = data[data.length - 1].id;
+      }
 
       // Load message statuses
       const messageIds = data.map(m => m.id);
@@ -106,6 +130,38 @@ export function useMessages(contactId: string | null) {
       console.error('Error loading messages:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMore = async () => {
+    if (!user || !contactId || loadingMore || !hasMore || messages.length === 0) return;
+
+    try {
+      setLoadingMore(true);
+      const oldestMessage = messages[0];
+      const limit = 10;
+      const data = await getConversationMessages(user.id, contactId, limit, oldestMessage.created_at);
+
+      if (data.length > 0) {
+        setMessages((prev) => [...data, ...prev]);
+
+        // Fetch statuses for new/old messages
+        const messageIds = data.map(m => m.id);
+        const statuses = await getMessagesStatus(messageIds);
+        setMessageStatuses((prev) => {
+          const newMap = new Map(prev);
+          statuses.forEach(status => newMap.set(status.message_id, status));
+          return newMap;
+        });
+      }
+
+      if (data.length < limit) {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error('Error loading more messages:', err);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -225,6 +281,9 @@ export function useMessages(contactId: string | null) {
     messagesEndRef,
     getMessageStatus,
     refetch: loadMessages,
+    loadMore,
+    hasMore,
+    loadingMore
   };
 }
 

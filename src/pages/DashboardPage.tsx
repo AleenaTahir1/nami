@@ -100,10 +100,11 @@ const DashboardPage = () => {
     const [fileAcceptType, setFileAcceptType] = useState<string>('*');
     const attachMenuRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const sentinelRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const { user } = useAuth();
     const { contacts, requests, loading, requestsLoading, addContact, searchUsers, acceptRequest, declineRequest } = useContacts();
-    const { messages, loading: messagesLoading, sending, sendMessage, deleteMessageForMe, editMessage, messagesEndRef, getMessageStatus } = useMessages(selectedContact?.user_id || null);
+    const { messages, loading: messagesLoading, sending, sendMessage, deleteMessageForMe, editMessage, messagesEndRef, getMessageStatus, loadMore, hasMore, loadingMore } = useMessages(selectedContact?.user_id || null);
     const { isOnline, getLastSeen } = useContactsPresence(contacts.map(c => c.user_id));
 
     // Context menu state
@@ -112,6 +113,21 @@ const DashboardPage = () => {
         position: { x: 0, y: 0 },
         messageId: null,
     });
+
+    // Infinite scroll observer
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel || loadingMore || !hasMore) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                loadMore();
+            }
+        }, { threshold: 0.1 });
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [loadingMore, hasMore, loadMore]);
 
     // Edit mode state
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -442,6 +458,15 @@ const DashboardPage = () => {
                                 </div>
                             ) : (
                                 <>
+                                    {/* Load More Sentinel */}
+                                    {!messageSearchQuery && hasMore && (
+                                        <div
+                                            ref={sentinelRef}
+                                            style={{ padding: '0.5rem', textAlign: 'center', opacity: 0.6, fontSize: '0.75rem', color: 'var(--text-light)' }}
+                                        >
+                                            {loadingMore && <div className="loading-spinner" />}
+                                        </div>
+                                    )}
                                     {!messageSearchQuery && (
                                         <div className="date-divider">
                                             <span>Today</span>
