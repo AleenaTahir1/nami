@@ -52,9 +52,10 @@ export async function getContactRequests(userId: string) {
 }
 
 
-export async function addContact(userId: string, contactUserId: string) {
+export async function addContact(_userId: string, contactUserId: string) {
   // Call the secure RPC to create bidirectional relationship
-  const { error } = await supabase.rpc('add_contact', {
+  // Note: _userId is kept for API compatibility but the RPC uses auth.uid() internally
+  const { error } = await (supabase.rpc as any)('add_contact', {
     p_contact_id: contactUserId,
   });
 

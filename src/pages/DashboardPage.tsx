@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search, Phone, Video, MoreVertical,
     Paperclip, Smile, Send, Settings,
-    Image, FileText, Film, X, UserPlus, Check, CheckCheck, Download, Trash2
+    Image, FileText, Film, X, UserPlus, Download, Trash2
 } from 'lucide-react';
 import { useContacts } from '../hooks/useContacts';
 import { useMessages } from '../hooks/useMessages';
