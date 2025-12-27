@@ -19,6 +19,25 @@ export async function markMessageAsRead(messageId: string, userId: string) {
   return data as MessageStatus;
 }
 
+export async function markMessageAsDelivered(messageId: string, userId: string) {
+  const { data, error } = await supabase
+    .from('message_status')
+    .update({
+      delivered_at: new Date().toISOString(),
+    })
+    .eq('message_id', messageId)
+    .eq('user_id', userId)
+    .is('delivered_at', null) // Only update if not already delivered
+    .select()
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // Ignore "no rows updated" error
+    console.error('Error marking message as delivered:', error);
+  }
+
+  return data as MessageStatus;
+}
+
 export async function markConversationAsRead(userId: string, contactId: string) {
   // First, get all message IDs from the contact to this user
   const { data: messages, error: fetchError } = await supabase

@@ -747,7 +747,7 @@ const DashboardPage = () => {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <MessageContent content={message.content} />
+                                                            <MessageContent content={isDeleted ? 'This message was deleted' : message.content} />
                                                         )}
 
                                                         {/* Display attachments */}
@@ -769,14 +769,14 @@ const DashboardPage = () => {
                                                             <span style={{ marginLeft: '0.25rem', opacity: 0.7 }}>(edited)</span>
                                                         )}
                                                         {isSent && !isDeleted && (
-                                                            <span style={{ marginLeft: '0.25rem', display: 'inline-flex', alignItems: 'center' }}>
-                                                                {isRead ? (
-                                                                    <CheckCheck size={12} style={{ color: 'var(--primary)' }} />
-                                                                ) : isDelivered ? (
-                                                                    <CheckCheck size={12} style={{ opacity: 0.5 }} />
-                                                                ) : (
-                                                                    <Check size={12} style={{ opacity: 0.5 }} />
-                                                                )}
+                                                            <span style={{
+                                                                marginLeft: '0.5rem',
+                                                                fontSize: '0.65rem',
+                                                                fontWeight: 500,
+                                                                color: isRead ? 'var(--primary)' : 'inherit',
+                                                                opacity: isRead ? 1 : 0.6
+                                                            }}>
+                                                                {isRead ? 'Seen' : isDelivered ? 'Delivered' : 'Sent'}
                                                             </span>
                                                         )}
                                                     </span>

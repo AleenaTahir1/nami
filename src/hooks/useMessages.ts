@@ -5,11 +5,13 @@ import {
   updateMessage as updateMessageApi,
   deleteMessage as deleteMessageApi,
   deleteAllMessages,
+  hideMessage,
   subscribeToMessages,
   type MessageWithAttachments,
 } from '../lib/messages';
 import {
   markConversationAsRead,
+  markMessageAsDelivered,
   getMessagesStatus,
   subscribeToMessageStatus
 } from '../lib/messageStatus';
@@ -40,6 +42,12 @@ export function useMessages(contactId: string | null) {
       // Subscribe to new messages
       const unsubscribe = subscribeToMessages(user.id, contactId, (newMessage) => {
         setMessages((prev) => [...prev, newMessage]);
+
+        // Mark as delivered immediately since we received it
+        if (newMessage.receiver_id === user.id) {
+          markMessageAsDelivered(newMessage.id, user.id);
+        }
+
         // Auto-mark as read if conversation is open
         markConversationAsRead(user.id, contactId).catch(console.error);
       });
@@ -126,6 +134,14 @@ export function useMessages(contactId: string | null) {
       // Update last message ref immediately after load
       if (data.length > 0) {
         lastMessageIdRef.current = data[data.length - 1].id;
+
+        // Mark loaded messages sent TO me as delivered
+        // We do this optimistically for the last batch to ensure status updates
+        data.forEach((m) => {
+          if (m.receiver_id === user.id) {
+            markMessageAsDelivered(m.id, user.id);
+          }
+        });
       }
 
       // Load message statuses
@@ -231,9 +247,18 @@ export function useMessages(contactId: string | null) {
     return messageStatuses.get(messageId) || null;
   };
 
-  // Delete message for current user only (local state)
-  const deleteMessageForMe = (messageId: string) => {
-    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+  // Delete message for current user only (local state + DB persistence)
+  const deleteMessageForMe = async (messageId: string) => {
+    try {
+      // 1. Optimistic update
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+
+      // 2. Persist to DB
+      await hideMessage(messageId);
+    } catch (err) {
+      console.error('Error hiding message:', err);
+      // Revert if failed (optional, but good UX to just log for now)
+    }
   };
 
   // Delete message for everyone (marks as deleted in DB)

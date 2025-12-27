@@ -119,6 +119,7 @@ export async function deleteMessage(messageId: string) {
     .from('messages')
     .update({
       deleted: true,
+      content: 'This message was deleted'
     })
     .eq('id', messageId);
 
@@ -134,6 +135,17 @@ export async function deleteAllMessages(userId: string, contactId: string) {
     .update({ deleted: true })
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
     .or(`sender_id.eq.${contactId},receiver_id.eq.${contactId}`);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function hideMessage(messageId: string) {
+  // @ts-ignore - RPC types not yet generated
+  const { error } = await supabase.rpc('hide_message', {
+    p_message_id: messageId,
+  });
 
   if (error) {
     throw error;
