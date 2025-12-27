@@ -642,63 +642,73 @@ a:hover {
 }
 
 /* Dark Mode Sidebar */
+/* Dark Mode Sidebar */
 [data-theme="dark"] .sidebar {
-  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
-  border-right: 1px solid rgba(244, 113, 181, 0.2);
-  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.3);
+  background: #111111;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  /* Clean gray border */
+  box-shadow: none;
+  /* Removed heavy shadow */
 }
 
 [data-theme="dark"] .sidebar-header {
-  background: linear-gradient(135deg, rgba(244, 113, 181, 0.15) 0%, rgba(192, 132, 252, 0.1) 100%);
-  border-bottom: 1px solid rgba(244, 113, 181, 0.15);
-  box-shadow: 0 2px 12px rgba(244, 113, 181, 0.15);
+  background: transparent;
+  /* Removed pink gradient */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  /* Removed glow shadow */
 }
 
 [data-theme="dark"] .search-input {
-  background: rgba(30, 30, 30, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+  /* Subtle dark background */
   color: var(--text-light);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
-    inset 0 0 0 1px rgba(244, 113, 181, 0.2);
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Clean border */
 }
 
 [data-theme="dark"] .search-input:focus {
-  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25),
-    inset 0 0 0 2px rgba(244, 113, 181, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 [data-theme="dark"] .contact-item {
-  background: rgba(30, 30, 30, 0.6);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid transparent;
 }
 
 [data-theme="dark"] .contact-item:hover {
-  background: rgba(40, 40, 40, 0.95);
-  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
 }
 
 [data-theme="dark"] .contact-item.active {
-  background: linear-gradient(135deg, rgba(244, 113, 181, 0.2) 0%, rgba(244, 113, 181, 0.12) 100%);
-  border: 1px solid rgba(244, 113, 181, 0.3);
-  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25),
-    inset 0 0 0 1px rgba(244, 113, 181, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  /* Minimal active background */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  /* Removed pink glow */
 }
 
 [data-theme="dark"] .sidebar-footer {
-  border-top: 1px solid rgba(244, 113, 181, 0.15);
-  background: linear-gradient(180deg, transparent 0%, rgba(244, 113, 181, 0.05) 100%);
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  box-shadow: none;
 }
 
 [data-theme="dark"] .settings-btn {
-  background: rgba(30, 30, 30, 0.7);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-light);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
 }
 
 [data-theme="dark"] .settings-btn:hover {
-  background: rgba(40, 40, 40, 0.95);
-  color: var(--primary);
-  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+  box-shadow: none;
 }
 
 .sidebar-header {
@@ -1006,12 +1016,18 @@ a:hover {
 }
 
 .date-divider span {
-  padding: 0.25rem 0.75rem;
-  background: rgba(244, 113, 181, 0.05);
-  border-radius: var(--radius-full);
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: rgba(157, 23, 77, 0.5);
+  padding: 0.35rem 1rem;
+  background: white;
+  /* Clean white background */
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9d174d;
+  /* Deep pink text */
+  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.15);
+  /* Soft pink shadow */
+  border: 1px solid rgba(244, 113, 181, 0.1);
+  /* Subtle border definition */
 }
 
 @keyframes messageFadeIn {
@@ -2798,6 +2814,12 @@ textarea:focus-visible {
 .date-divider span {
   box-shadow: 0 2px 8px rgba(244, 113, 181, 0.1);
   backdrop-filter: blur(8px);
+}
+
+[data-theme="dark"] .date-divider span {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Settings Button Glow - REMOVED DUPLICATE */

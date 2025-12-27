@@ -112,7 +112,7 @@ const DashboardPage = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { contacts, requests, loading, requestsLoading, addContact, searchUsers, acceptRequest, declineRequest } = useContacts();
-    const { messages, loading: messagesLoading, sending, sendMessage: sendChatMessage, deleteMessageForMe, editMessage, messagesEndRef, getMessageStatus, loadMore, hasMore, loadingMore, clearChat } = useMessages(selectedContact?.user_id || null);
+    const { messages, loading: messagesLoading, sending, sendMessage: sendChatMessage, deleteMessageForMe, deleteMessageForEveryone, editMessage, messagesEndRef, getMessageStatus, loadMore, hasMore, loadingMore, clearChat } = useMessages(selectedContact?.user_id || null);
     const { isOnline, getLastSeen } = useContactsPresence(contacts.map(c => c.user_id));
 
     // Context menu state
@@ -1006,7 +1006,16 @@ const DashboardPage = () => {
                         }}
                         onDeleteForMe={() => {
                             if (contextMenu.messageId) {
-                                deleteMessageForMe(contextMenu.messageId);
+                                const message = messages.find(m => m.id === contextMenu.messageId);
+                                if (message) {
+                                    if (message.sender_id === user?.id) {
+                                        // My message: Delete for everyone
+                                        deleteMessageForEveryone(contextMenu.messageId);
+                                    } else {
+                                        // Other's message: Delete for me (local hide)
+                                        deleteMessageForMe(contextMenu.messageId);
+                                    }
+                                }
                             }
                         }}
                     />
