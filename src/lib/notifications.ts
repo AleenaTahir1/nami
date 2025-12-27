@@ -63,7 +63,8 @@ export async function isAppFocused(): Promise<boolean> {
         return await invoke<boolean>('is_app_focused');
     } catch (error) {
         console.error('Failed to check app focus:', error);
-        // Fallback to document.hasFocus() if Tauri command fails
-        return document.hasFocus();
+        // Default to NOT focused to ensure notifications are shown
+        // This is safer than suppressing notifications when we can't determine focus
+        return false;
     }
 }

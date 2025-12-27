@@ -205,9 +205,16 @@ const DashboardPage = () => {
             // Don't notify for own messages
             if (newMessage.sender_id === user.id) return;
 
-            // Check if app is focused
-            const focused = await isAppFocused();
-            if (focused) return;
+            // Check if app is focused - properly await
+            try {
+                const focused = await isAppFocused();
+                if (focused) {
+                    console.log('App is focused, skipping notification');
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking focus, showing notification anyway:', error);
+            }
 
             // Find sender name
             const sender = contactsRef.current.find(c => c.user_id === newMessage.sender_id);

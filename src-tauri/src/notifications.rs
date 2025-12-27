@@ -69,34 +69,40 @@ pub async fn show_notification(
 }
 
 /// Play notification sound
-/// Uses a simple beep on Windows, system sound on other platforms
+/// Uses Windows system notification sound, macOS/Linux system sounds
 #[tauri::command]
-pub fn play_notification_sound() -> Result<(), String> {
+pub async fn play_notification_sound() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        // Use Windows beep
         use std::process::Command;
-        let _ = Command::new("powershell")
-            .args(&["-c", "[console]::beep(800,200)"])
-            .output();
+        // Use Windows system notification sound (async spawn to avoid blocking)
+        let result = Command::new("powershell")
+            .args(&[
+                "-c",
+                "(New-Object Media.SoundPlayer 'C:\\Windows\\Media\\Windows Notify System Generic.wav').PlaySync()"
+            ])
+            .spawn();
+        
+        if let Err(e) = result {
+            eprintln!("Failed to play notification sound: {}", e);
+            return Err(format!("Failed to play sound: {}", e));
+        }
     }
 
     #[cfg(target_os = "macos")]
     {
-        // Use macOS system sound
         use std::process::Command;
         let _ = Command::new("afplay")
             .arg("/System/Library/Sounds/Glass.aiff")
-            .output();
+            .spawn();
     }
 
     #[cfg(target_os = "linux")]
     {
-        // Use Linux beep if available
         use std::process::Command;
         let _ = Command::new("paplay")
             .arg("/usr/share/sounds/freedesktop/stereo/message.oga")
-            .output();
+            .spawn();
     }
 
     Ok(())

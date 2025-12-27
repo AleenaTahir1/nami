@@ -87,8 +87,14 @@ export function subscribeToMessageStatus(
   messageIds: string[],
   onStatusUpdate: (status: MessageStatus) => void
 ) {
+  // Use a more stable channel name based on the first message ID
+  // This prevents duplicate subscriptions while still being unique per conversation
+  const channelName = messageIds.length > 0
+    ? `message-status-${messageIds[0]}`
+    : `message-status-${Date.now()}`;
+
   const channel = supabase
-    .channel(`message-status-${Date.now()}`)
+    .channel(channelName)
     .on(
       'postgres_changes',
       {
@@ -98,7 +104,9 @@ export function subscribeToMessageStatus(
       },
       (payload) => {
         const updatedStatus = payload.new as MessageStatus;
+        // Check if this status update is for any of our messages
         if (messageIds.includes(updatedStatus.message_id)) {
+          console.log('Received status update for message:', updatedStatus.message_id);
           onStatusUpdate(updatedStatus);
         }
       }

@@ -82,11 +82,39 @@ export function subscribeToPresence(
         schema: 'public',
         table: 'user_presence',
       },
-      (payload) => {
+      async (payload) => {
         const newRecord = payload.new as { user_id?: string } | undefined;
         const oldRecord = payload.old as { user_id?: string } | undefined;
-        if (userIds.includes(newRecord?.user_id || oldRecord?.user_id || '')) {
-          onPresenceChange(payload.new || payload.old);
+        const userId = newRecord?.user_id || oldRecord?.user_id || '';
+
+        if (userIds.includes(userId)) {
+          // Re-fetch with privacy settings to ensure real-time updates respect privacy
+          const { data, error } = await supabase
+            .from('user_presence')
+            .select(`
+              *,
+              profiles!inner(show_online_status)
+            `)
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          if (!error && data) {
+            const presence = {
+              user_id: data.user_id,
+              online: data.online,
+              last_seen: data.last_seen,
+              updated_at: data.updated_at,
+              connection_id: data.connection_id,
+            };
+
+            // Apply privacy filtering
+            const showOnlineStatus = (data as any).profiles?.show_online_status ?? true;
+            if (!showOnlineStatus) {
+              onPresenceChange({ ...presence, online: false });
+            } else {
+              onPresenceChange(presence);
+            }
+          }
         }
       }
     )

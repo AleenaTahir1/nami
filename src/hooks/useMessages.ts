@@ -59,7 +59,11 @@ export function useMessages(contactId: string | null) {
     if (messages.length === 0) return;
 
     const messageIds = messages.map(m => m.id);
+
+    console.log('Subscribing to message status for', messageIds.length, 'messages');
+
     const unsubscribe = subscribeToMessageStatus(messageIds, (updatedStatus) => {
+      console.log('Received status update:', updatedStatus);
       setMessageStatuses((prev) => {
         const newMap = new Map(prev);
         newMap.set(updatedStatus.message_id, updatedStatus);
@@ -68,7 +72,7 @@ export function useMessages(contactId: string | null) {
     });
 
     return unsubscribe;
-  }, [messages.map(m => m.id).join(',')]); // Only re-subscribe when message IDs change
+  }, [messages.length, messages[messages.length - 1]?.id]); // Depend on count and last message ID
 
   // Auto-scroll when messages load (Initial Load)
   useEffect(() => {
