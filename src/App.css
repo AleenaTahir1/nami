@@ -2127,3 +2127,445 @@ a:hover {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* ==========================================
+   MICRO-ANIMATIONS & VISUAL ENHANCEMENTS
+   ========================================== */
+
+/* Custom Scrollbars - Elegant & Thin */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(244, 113, 181, 0.2);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 113, 181, 0.4);
+}
+
+/* Elevation System - Layered Shadows */
+.elevation-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.elevation-2 {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.elevation-3 {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.08),
+    0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.elevation-4 {
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1),
+    0 10px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* Message Animations */
+.message {
+  animation: slideInMessage 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.message:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(244, 113, 181, 0.15);
+}
+
+.message.sent:hover {
+  box-shadow: 0 8px 24px rgba(244, 113, 181, 0.2);
+}
+
+@keyframes slideInMessage {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Contact List Stagger Animation */
+.contact-item {
+  animation: fadeSlideIn 0.4s ease-out backwards;
+  animation-delay: calc(var(--index, 0) * 0.05s);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contact-item.active {
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.2),
+    inset 0 0 0 1px rgba(244, 113, 181, 0.3);
+  transform: translateX(4px);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Avatar Enhancements */
+.avatar-placeholder {
+  box-shadow: 0 4px 12px rgba(244, 113, 181, 0.2);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.avatar-placeholder:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 8px 24px rgba(244, 113, 181, 0.3);
+}
+
+/* Online Indicator Pulse */
+.online-indicator {
+  animation: pulseGlow 2s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+}
+
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgba(74, 222, 128, 0);
+  }
+}
+
+/* Button Ripple Effect */
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+  pointer-events: none;
+}
+
+.btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-primary {
+  box-shadow: 0 4px 20px rgba(244, 113, 181, 0.35);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(244, 113, 181, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(244, 113, 181, 0.3);
+}
+
+/* Input Field Glow */
+.message-input,
+.search-input,
+.form-input {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.message-input:focus,
+.search-input:focus,
+.form-input:focus {
+  box-shadow: 0 0 0 3px rgba(244, 113, 181, 0.1),
+    0 4px 20px rgba(244, 113, 181, 0.15);
+}
+
+/* Search Icon Animation */
+.search-icon {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-input:focus~.search-icon {
+  transform: translateY(-50%) scale(1.2);
+  color: var(--primary);
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px;
+  align-items: center;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+
+  30% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Status Indicator Animation */
+.message-time svg {
+  animation: statusChange 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes statusChange {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Modal/Overlay Animations */
+.emoji-picker-overlay,
+.modal-overlay {
+  animation: fadeInBackdrop 0.3s ease-out;
+}
+
+.emoji-picker,
+.modal-content {
+  animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fadeInBackdrop {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Context Menu Animation */
+.context-menu {
+  animation: contextMenuSlide 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top left;
+}
+
+@keyframes contextMenuSlide {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(90deg,
+      rgba(244, 113, 181, 0.05) 25%,
+      rgba(244, 113, 181, 0.1) 50%,
+      rgba(244, 113, 181, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Notification Badge Pop */
+.notification-badge {
+  animation: badgePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Smooth Hover States */
+.action-btn,
+.titlebar-btn,
+.settings-btn,
+.emoji-close-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-btn:hover,
+.titlebar-btn:hover,
+.settings-btn:hover {
+  transform: translateY(-1px);
+}
+
+.action-btn:active,
+.titlebar-btn:active,
+.settings-btn:active {
+  transform: translateY(0);
+  transition-duration: 0.1s;
+}
+
+/* Message Bubble Enhanced Shadows */
+.message-bubble {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.message.sent .message-bubble {
+  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.15);
+}
+
+.message.sent:hover .message-bubble {
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25);
+}
+
+.message.received .message-bubble {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.message.received:hover .message-bubble {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Smooth Page Transitions */
+.dashboard-layout,
+.chat-area,
+.sidebar {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .online-indicator {
+    animation: none;
+  }
+
+  .typing-dot {
+    animation: none;
+  }
+}
+
+/* Enhanced Focus States */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Smooth Color Transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+/* Override for animations */
+*[class*="animate"],
+*[class*="transition"] {
+  transition-property: all;
+}
