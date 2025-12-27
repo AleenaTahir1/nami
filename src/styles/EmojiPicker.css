@@ -108,13 +108,14 @@
     justify-content: center;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     padding: 0;
+    position: relative;
 }
 
 .emoji-item:hover {
     background: var(--bg-hover);
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .emoji-item:active {

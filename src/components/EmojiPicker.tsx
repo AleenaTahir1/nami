@@ -12,6 +12,7 @@ export function EmojiPicker({ onEmojiSelect, onClose }: EmojiPickerProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredEmojis, setFilteredEmojis] = useState<EmojiData[]>([]);
     const [loadedLotties, setLoadedLotties] = useState<Map<string, any>>(new Map());
+    const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null);
     const pickerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -76,18 +77,22 @@ export function EmojiPicker({ onEmojiSelect, onClose }: EmojiPickerProps) {
                 <div className="emoji-grid">
                     {filteredEmojis.map((emoji) => {
                         const lottieData = loadedLotties.get(emoji.lottieUrl);
+                        const isHovered = hoveredEmoji === emoji.unicode;
+
                         return (
                             <button
                                 key={emoji.unicode}
                                 className="emoji-item"
                                 onClick={() => handleEmojiClick(emoji)}
+                                onMouseEnter={() => setHoveredEmoji(emoji.unicode)}
+                                onMouseLeave={() => setHoveredEmoji(null)}
                                 title={emoji.name}
                             >
                                 {lottieData ? (
                                     <Lottie
                                         animationData={lottieData}
-                                        loop={true}
-                                        autoplay={true}
+                                        loop={isHovered}
+                                        autoplay={isHovered}
                                         style={{ width: 40, height: 40 }}
                                     />
                                 ) : (
