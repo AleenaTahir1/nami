@@ -4,10 +4,10 @@
 
 /* CSS Variables - Color Palette */
 :root {
-  /* Primary Colors */
-  --primary: #f471b5;
-  --primary-dark: #db4c9a;
-  --primary-light: #ffa3d0;
+  /* Primary Colors - Slightly Darker Pink */
+  --primary: #ec4899;
+  --primary-dark: #db2777;
+  --primary-light: #f687b3;
 
   /* Background Colors */
   --background-light: #FFF1F2;
@@ -973,6 +973,42 @@ a:hover {
   gap: 0.25rem;
 }
 
+.message-search-input {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border-color);
+  font-size: 0.875rem;
+  width: 200px;
+  outline: none;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.message-search-input:focus {
+  border-color: var(--primary);
+  width: 240px;
+}
+
+/* Hide message search on small screens */
+@media (max-width: 900px) {
+  .chat-actions>div:first-child {
+    display: none;
+  }
+}
+
+/* Ensure header info truncates properly */
+.chat-user-info {
+  min-width: 0;
+  /* Enable flex truncation */
+}
+
+.chat-user-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .action-btn {
   display: flex;
   align-items: center;
@@ -1017,17 +1053,16 @@ a:hover {
 
 .date-divider span {
   padding: 0.35rem 1rem;
-  background: white;
-  /* Clean white background */
+  background: var(--primary);
+  /* Solid Primary Pink */
+  backdrop-filter: none;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #9d174d;
-  /* Deep pink text */
-  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.15);
-  /* Soft pink shadow */
-  border: 1px solid rgba(244, 113, 181, 0.1);
-  /* Subtle border definition */
+  color: white;
+  /* White text */
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.25);
+  border: none;
 }
 
 @keyframes messageFadeIn {
@@ -1122,11 +1157,11 @@ a:hover {
 }
 
 .message.sent .message-bubble {
-  background: linear-gradient(135deg, var(--primary), #f9a8d4);
+  background: var(--primary) !important;
+  background-image: none !important;
   color: white;
   border-bottom-right-radius: 0.25rem;
-  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.2),
-    0 4px 16px rgba(244, 113, 181, 0.15);
+  box-shadow: none !important;
 }
 
 .message.sent:hover .message-bubble {
@@ -2700,19 +2735,22 @@ textarea:focus-visible {
 }
 
 /* Action Buttons Floating Effect */
+/* Action Buttons Floating Effect - Glow Removed */
 .action-btn {
-  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.15);
+  box-shadow: none;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .action-btn:hover {
-  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25);
+  box-shadow: none;
   transform: translateY(-2px) scale(1.05);
+  background: rgba(244, 113, 181, 0.05);
+  /* Very subtle background only */
 }
 
 .action-btn:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 1px 4px rgba(244, 113, 181, 0.2);
+  box-shadow: none;
 }
 
 /* Send Button Enhanced */

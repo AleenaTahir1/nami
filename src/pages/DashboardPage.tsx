@@ -488,16 +488,7 @@ const DashboardPage = () => {
                                         placeholder="Search messages..."
                                         value={messageSearchQuery}
                                         onChange={(e) => setMessageSearchQuery(e.target.value)}
-                                        style={{
-                                            padding: '0.5rem 2rem 0.5rem 0.75rem',
-                                            borderRadius: '1rem',
-                                            border: '1px solid var(--border-color)',
-                                            fontSize: '0.875rem',
-                                            width: '200px',
-                                            outline: 'none',
-                                            backgroundColor: 'var(--bg-secondary)',
-                                            color: 'var(--text-primary)'
-                                        }}
+                                        className="message-search-input"
                                     />
                                     {messageSearchQuery && (
                                         <button
