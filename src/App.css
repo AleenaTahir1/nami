@@ -834,13 +834,23 @@ a:hover {
 
 .online-indicator {
   position: absolute;
-  bottom: 0;
-  right: 0;
+  bottom: -2px;
+  right: -2px;
   width: 0.75rem;
   height: 0.75rem;
-  background: #4ade80;
+  background: #9ca3af;
+  /* Default to offline grey */
   border: 2px solid white;
   border-radius: 50%;
+  z-index: 10;
+}
+
+.online-indicator.online {
+  background: #4ade80;
+}
+
+.online-indicator.offline {
+  background: #d1d5db;
 }
 
 .online-indicator.small {

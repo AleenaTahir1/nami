@@ -432,7 +432,7 @@ const DashboardPage = () => {
                                                 {getInitials(contact.display_name)}
                                             </div>
                                         )}
-                                        {online && <span className="online-indicator" />}
+                                        <span className={`online-indicator ${online ? 'online' : 'offline'}`} />
                                     </div>
                                     <div className="contact-info">
                                         <div className="contact-header">
@@ -477,7 +477,7 @@ const DashboardPage = () => {
                                             {getInitials(selectedContact.display_name)}
                                         </div>
                                     )}
-                                    {isOnline(selectedContact.user_id) && <span className="online-indicator small" />}
+                                    <span className={`online-indicator small ${isOnline(selectedContact.user_id) ? 'online' : 'offline'}`} />
                                 </div>
                                 <div>
                                     <h2 className="chat-user-name">{selectedContact.display_name}</h2>

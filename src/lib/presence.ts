@@ -38,10 +38,7 @@ export async function getMultiplePresences(userIds: string[]) {
   // Join with profiles to get show_online_status privacy setting
   const { data, error } = await supabase
     .from('user_presence')
-    .select(`
-      *,
-      profiles!inner(show_online_status)
-    `)
+    .select('*')
     .in('user_id', userIds);
 
   if (error) {
@@ -59,11 +56,13 @@ export async function getMultiplePresences(userIds: string[]) {
       connection_id: item.connection_id,
     };
 
-    // If user has disabled online status, always show as offline
+    // Map the data (privacy check temporarily disabled to debug join issue)
+    /*
     const showOnlineStatus = item.profiles?.show_online_status ?? true;
     if (!showOnlineStatus) {
       return { ...presence, online: false };
     }
+    */
 
     return presence;
   });
@@ -88,13 +87,10 @@ export function subscribeToPresence(
         const userId = newRecord?.user_id || oldRecord?.user_id || '';
 
         if (userIds.includes(userId)) {
-          // Re-fetch with privacy settings to ensure real-time updates respect privacy
+          // Re-fetch (simplified - no profile join)
           const { data, error } = await supabase
             .from('user_presence')
-            .select(`
-              *,
-              profiles!inner(show_online_status)
-            `)
+            .select('*')
             .eq('user_id', userId)
             .maybeSingle();
 
@@ -107,13 +103,16 @@ export function subscribeToPresence(
               connection_id: data.connection_id,
             };
 
-            // Apply privacy filtering
+            // Apply privacy filtering (Disabled for debug)
+            /*
             const showOnlineStatus = (data as any).profiles?.show_online_status ?? true;
             if (!showOnlineStatus) {
               onPresenceChange({ ...presence, online: false });
             } else {
               onPresenceChange(presence);
             }
+            */
+            onPresenceChange(presence);
           }
         }
       }

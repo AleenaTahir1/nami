@@ -14,6 +14,7 @@ export function useContactsPresence(contactUserIds: string[]) {
     // Load initial presence data
     const loadPresences = async () => {
       const data = await getMultiplePresences(contactUserIds);
+      console.log('Presence data loaded:', data);
       const presenceMap = new Map<string, UserPresence>();
       data.forEach(presence => {
         presenceMap.set(presence.user_id, presence);
@@ -26,6 +27,7 @@ export function useContactsPresence(contactUserIds: string[]) {
     // Subscribe to presence changes
     const unsubscribe = subscribeToPresence(contactUserIds, (updatedPresence) => {
       setPresences((prev) => {
+        console.log('Presence update received:', updatedPresence);
         const newMap = new Map(prev);
         newMap.set(updatedPresence.user_id, updatedPresence);
         return newMap;
