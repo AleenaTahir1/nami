@@ -108,6 +108,7 @@ const DashboardPage = () => {
     const [fileAcceptType, setFileAcceptType] = useState<string>('*');
     const attachMenuRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const messageInputRef = useRef<HTMLTextAreaElement>(null);
     const sentinelRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -262,6 +263,10 @@ const DashboardPage = () => {
                 await sendChatMessage(messageInput.trim(), selectedFiles);
                 setMessageInput('');
                 setSelectedFiles([]);
+                // Keep focus on input after sending
+                setTimeout(() => {
+                    messageInputRef.current?.focus();
+                }, 10);
             } catch (error) {
                 console.error('Failed to send message:', error);
             }
@@ -924,6 +929,7 @@ const DashboardPage = () => {
                                 </div>
 
                                 <textarea
+                                    ref={messageInputRef}
                                     className="message-textarea"
                                     placeholder="Type a message..."
                                     value={messageInput}
