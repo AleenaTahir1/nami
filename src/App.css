@@ -623,14 +623,15 @@ a:hover {
 
 /* Sidebar */
 .sidebar {
-  width: 260px;
-  min-width: 260px;
+  width: 320px;
+  min-width: 320px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(244, 113, 181, 0.1);
-  background: var(--background-light);
+  border-right: 1px solid rgba(244, 113, 181, 0.15);
+  background: linear-gradient(180deg, #FFF1F2 0%, #ffffff 100%);
   flex-shrink: 0;
-  transition: all 0.3s ease;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.04);
+  position: relative;
 }
 
 /* Hide sidebar on small screens */
@@ -640,8 +641,71 @@ a:hover {
   }
 }
 
+/* Dark Mode Sidebar */
+[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+  border-right: 1px solid rgba(244, 113, 181, 0.2);
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .sidebar-header {
+  background: linear-gradient(135deg, rgba(244, 113, 181, 0.15) 0%, rgba(192, 132, 252, 0.1) 100%);
+  border-bottom: 1px solid rgba(244, 113, 181, 0.15);
+  box-shadow: 0 2px 12px rgba(244, 113, 181, 0.15);
+}
+
+[data-theme="dark"] .search-input {
+  background: rgba(30, 30, 30, 0.9);
+  color: var(--text-light);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(244, 113, 181, 0.2);
+}
+
+[data-theme="dark"] .search-input:focus {
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25),
+    inset 0 0 0 2px rgba(244, 113, 181, 0.4);
+}
+
+[data-theme="dark"] .contact-item {
+  background: rgba(30, 30, 30, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .contact-item:hover {
+  background: rgba(40, 40, 40, 0.95);
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.2);
+}
+
+[data-theme="dark"] .contact-item.active {
+  background: linear-gradient(135deg, rgba(244, 113, 181, 0.2) 0%, rgba(244, 113, 181, 0.12) 100%);
+  border: 1px solid rgba(244, 113, 181, 0.3);
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25),
+    inset 0 0 0 1px rgba(244, 113, 181, 0.2);
+}
+
+[data-theme="dark"] .sidebar-footer {
+  border-top: 1px solid rgba(244, 113, 181, 0.15);
+  background: linear-gradient(180deg, transparent 0%, rgba(244, 113, 181, 0.05) 100%);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .settings-btn {
+  background: rgba(30, 30, 30, 0.7);
+  color: var(--text-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .settings-btn:hover {
+  background: rgba(40, 40, 40, 0.95);
+  color: var(--primary);
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25);
+}
+
 .sidebar-header {
-  padding: 1rem;
+  padding: 1.5rem 1.25rem;
+  background: linear-gradient(135deg, rgba(244, 113, 181, 0.08) 0%, rgba(192, 132, 252, 0.05) 100%);
+  border-bottom: 1px solid rgba(244, 113, 181, 0.1);
+  box-shadow: 0 2px 12px rgba(244, 113, 181, 0.08);
 }
 
 .search-wrapper {
@@ -659,19 +723,24 @@ a:hover {
 
 .search-input {
   width: 100%;
-  height: 2.5rem;
-  padding: 0 1rem 0 2.5rem;
-  background: var(--bg-secondary);
+  height: 2.75rem;
+  padding: 0 1rem 0 2.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
   border: none;
   border-radius: var(--radius-full);
   font-size: 0.875rem;
   color: var(--text-dark);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(244, 113, 181, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06),
+    inset 0 0 0 1px rgba(244, 113, 181, 0.12);
   outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-input:focus {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), inset 0 0 0 2px var(--primary);
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.15),
+    inset 0 0 0 2px rgba(244, 113, 181, 0.3);
+  transform: translateY(-1px);
 }
 
 .search-input::placeholder {
@@ -682,26 +751,38 @@ a:hover {
 .contact-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0 0.5rem 1rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: var(--radius-lg);
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .contact-item:hover {
-  background: rgba(244, 113, 181, 0.05);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.12);
+  transform: translateX(4px) translateY(-2px);
+  border-color: rgba(244, 113, 181, 0.15);
 }
 
 .contact-item.active {
   background: rgba(244, 113, 181, 0.1);
-  border: 1px solid rgba(244, 113, 181, 0.05);
+  border: 1px solid rgba(244, 113, 181, 0.2);
+  box-shadow: 0 4px 12px rgba(244, 113, 181, 0.15),
+    inset 0 0 0 1px rgba(244, 113, 181, 0.1);
 }
 
 .contact-avatar {
@@ -710,16 +791,17 @@ a:hover {
 }
 
 .avatar-placeholder {
-  width: 3rem;
-  height: 3rem;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 50%;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #ffa3d0);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(244, 113, 181, 0.25);
 }
 
 .avatar-placeholder.small {
@@ -769,12 +851,13 @@ a:hover {
 }
 
 .contact-name {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--muted-mauve);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
 
 .contact-time {
@@ -789,10 +872,11 @@ a:hover {
 
 .contact-message {
   font-size: 0.8rem;
-  color: rgba(157, 23, 77, 0.6);
+  color: rgba(157, 23, 77, 0.55);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 400;
 }
 
 .sidebar-footer {
@@ -819,6 +903,7 @@ a:hover {
 .settings-btn:hover {
   background: rgba(244, 113, 181, 0.1);
   color: var(--primary);
+  transform: translateY(-1px);
 }
 
 /* Chat Area */
@@ -1002,20 +1087,36 @@ a:hover {
   border-radius: 1rem;
   font-size: 0.9rem;
   line-height: 1.5;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .message.received .message-bubble {
   background: var(--bg-secondary);
   color: var(--muted-mauve);
   border-bottom-left-radius: 0.25rem;
-  box-shadow: 0 2px 10px rgba(244, 113, 181, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.message.received:hover .message-bubble {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
 .message.sent .message-bubble {
   background: linear-gradient(135deg, var(--primary), #f9a8d4);
   color: white;
   border-bottom-right-radius: 0.25rem;
-  box-shadow: 0 2px 10px rgba(244, 113, 181, 0.25);
+  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.2),
+    0 4px 16px rgba(244, 113, 181, 0.15);
+}
+
+.message.sent:hover .message-bubble {
+  box-shadow: 0 4px 12px rgba(244, 113, 181, 0.25),
+    0 8px 24px rgba(244, 113, 181, 0.2);
+  transform: translateY(-1px);
 }
 
 .message-time {
@@ -1046,7 +1147,14 @@ a:hover {
   padding: 0.375rem 0.5rem;
   background: var(--bg-secondary);
   border-radius: 1.25rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.message-input-wrapper:focus-within {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
 /* Attachment Menu */
@@ -2176,16 +2284,7 @@ a:hover {
 /* Message Animations */
 .message {
   animation: slideInMessage 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.message:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(244, 113, 181, 0.15);
-}
-
-.message.sent:hover {
-  box-shadow: 0 8px 24px rgba(244, 113, 181, 0.2);
+  /* Hover styles moved to main message section above */
 }
 
 @keyframes slideInMessage {
@@ -2491,26 +2590,8 @@ a:hover {
   transition-duration: 0.1s;
 }
 
-/* Message Bubble Enhanced Shadows */
-.message-bubble {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.message.sent .message-bubble {
-  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.15);
-}
-
-.message.sent:hover .message-bubble {
-  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25);
-}
-
-.message.received .message-bubble {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.message.received:hover .message-bubble {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
+/* Message Bubble Enhanced Shadows - REMOVED DUPLICATES */
+/* Hover styles are in main message section above */
 
 /* Smooth Page Transitions */
 .dashboard-layout,
@@ -2551,10 +2632,14 @@ a:hover {
 
 /* Enhanced Focus States */
 button:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
+input:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Remove outline from textarea to prevent border box */
+textarea:focus-visible {
+  outline: none;
 }
 
 /* Smooth Color Transitions */
@@ -2568,4 +2653,212 @@ textarea:focus-visible {
 *[class*="animate"],
 *[class*="transition"] {
   transition-property: all;
+}
+
+/* ==========================================
+   PREMIUM DEPTH & POLISH ENHANCEMENTS
+   ========================================== */
+
+/* Chat Header Enhanced Shadow */
+.chat-header {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04),
+    0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* Sidebar Header Depth */
+.sidebar-header {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+/* Search Input Enhanced */
+.search-input {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 0 0 1px rgba(244, 113, 181, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-input:focus {
+  box-shadow: 0 4px 12px rgba(244, 113, 181, 0.12),
+    inset 0 0 0 2px rgba(244, 113, 181, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Action Buttons Floating Effect */
+.action-btn {
+  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.15);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.action-btn:hover {
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.25);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.action-btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 4px rgba(244, 113, 181, 0.2);
+}
+
+/* Send Button Enhanced */
+.send-btn {
+  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.2);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.send-btn:hover {
+  box-shadow: 0 4px 16px rgba(244, 113, 181, 0.3);
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.send-btn:active {
+  transform: scale(0.95);
+}
+
+/* Emoji Button Bounce */
+.emoji-btn:hover {
+  animation: emojiWiggle 0.5s ease-in-out;
+}
+
+@keyframes emojiWiggle {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-10deg) scale(1.1);
+  }
+
+  75% {
+    transform: rotate(10deg) scale(1.1);
+  }
+}
+
+/* Avatar Ring Glow */
+.avatar-placeholder {
+  position: relative;
+}
+
+.avatar-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #ffa3d0);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+  filter: blur(8px);
+}
+
+.avatar-placeholder:hover::before {
+  opacity: 0.6;
+}
+
+/* Contact Item Gradient on Active */
+.contact-item.active {
+  background: linear-gradient(90deg,
+      rgba(244, 113, 181, 0.12) 0%,
+      rgba(244, 113, 181, 0.08) 100%);
+}
+
+/* Message Bubble Gradient Enhancement */
+.message.sent .message-bubble {
+  background: linear-gradient(135deg,
+      var(--primary) 0%,
+      #f9a8d4 50%,
+      #fbbfd9 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.message.sent .message-bubble::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
+  transition: left 0.5s ease;
+}
+
+.message.sent:hover .message-bubble::before {
+  left: 100%;
+}
+
+/* Input Wrapper Glow Effect - REMOVED */
+/* Glow effect removed per user request */
+
+/* Date Divider Enhanced */
+.date-divider span {
+  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+/* Settings Button Glow - REMOVED DUPLICATE */
+/* Hover style is in main sidebar section above */
+
+/* Titlebar Buttons Enhanced */
+.titlebar-btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.titlebar-btn:hover {
+  box-shadow: 0 2px 8px rgba(244, 113, 181, 0.15);
+}
+
+.titlebar-btn.close:hover {
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Enhanced Elevation for Dark Mode */
+[data-theme="dark"] .elevation-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .elevation-2 {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .elevation-3 {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5),
+    0 4px 6px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .elevation-4 {
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.6),
+    0 10px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth Gradient Background for Dashboard */
+.dashboard-layout {
+  position: relative;
+}
+
+.dashboard-layout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: radial-gradient(ellipse at top,
+      rgba(244, 113, 181, 0.05) 0%,
+      transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above gradient */
+.sidebar,
+.chat-area {
+  position: relative;
+  z-index: 1;
 }
