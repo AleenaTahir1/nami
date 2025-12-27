@@ -1998,3 +1998,132 @@ a:hover {
     border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
 }
+
+/* ==========================================
+   Markdown & Code Content
+   ========================================== */
+.markdown-content {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.markdown-content p {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* Inline Code */
+.inline-code {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.85em;
+  color: var(--text-dark);
+}
+
+[data-theme="dark"] .inline-code {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-white);
+}
+
+/* Code Blocks */
+.code-block-wrapper {
+  margin: 0.75rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .code-block-wrapper {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  background: #1e1e1e;
+  /* Match VS Code Dark header */
+  color: #d4d4d4;
+  font-size: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-language {
+  text-transform: uppercase;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.copy-button {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: transparent;
+  border: none;
+  color: #d4d4d4;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  transition: background 0.2s ease;
+}
+
+.copy-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.copy-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Table styling for GFM */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .markdown-content th {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Links */
+.markdown-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

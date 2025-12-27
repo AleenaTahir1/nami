@@ -17,7 +17,7 @@ import { AddContactModal } from '../components/AddContactModal';
 import { MessageContextMenu } from '../components/MessageContextMenu';
 import { ContactRequestsModal } from '../components/ContactRequestsModal';
 import { EmojiPicker } from '../components/EmojiPicker';
-import { MessageWithEmojis } from '../components/MessageWithEmojis';
+import { MessageContent } from '../components/MessageContent';
 import type { Profile, Attachment } from '../lib/supabase-types';
 import type { EmojiData } from '../lib/emoji-data';
 import { getAttachmentUrl, formatFileSize, getFileIcon } from '../lib/attachments';
@@ -749,7 +749,7 @@ const DashboardPage = () => {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <MessageWithEmojis content={message.content} />
+                                                            <MessageContent content={message.content} />
                                                         )}
 
                                                         {/* Display attachments */}
