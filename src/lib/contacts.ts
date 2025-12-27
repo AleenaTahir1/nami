@@ -53,54 +53,14 @@ export async function getContactRequests(userId: string) {
 
 
 export async function addContact(userId: string, contactUserId: string) {
-  // Check if contact already exists
-  const { data: existing } = await supabase
-    .from('contacts')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('contact_id', contactUserId)
-    .maybeSingle();
+  // Call the secure RPC to create bidirectional relationship
+  const { error } = await supabase.rpc('add_contact', {
+    p_contact_id: contactUserId,
+  });
 
-  if (existing) {
-    throw new Error('Contact already exists');
+  if (error) {
+    throw error;
   }
-
-  // Create bidirectional accepted relationship immediately
-  // Insert first direction (with upsert to handle conflicts)
-  const { error: error1 } = await supabase
-    .from('contacts')
-    .upsert({
-      user_id: userId,
-      contact_id: contactUserId,
-      status: 'accepted',
-    }, {
-      onConflict: 'user_id,contact_id',
-      ignoreDuplicates: false
-    });
-
-  if (error1) {
-    throw error1;
-  }
-
-  // Insert reverse direction
-  const { data, error: error2 } = await supabase
-    .from('contacts')
-    .upsert({
-      user_id: contactUserId,
-      contact_id: userId,
-      status: 'accepted',
-    }, {
-      onConflict: 'user_id,contact_id',
-      ignoreDuplicates: false
-    })
-    .select()
-    .single();
-
-  if (error2) {
-    throw error2;
-  }
-
-  return data as Contact;
 }
 
 export async function updateContactStatus(
