@@ -7,7 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  lint-and-build:
+  build:
+    permissions:
+      contents: write
     runs-on: windows-latest
     
     steps:
@@ -41,7 +43,26 @@ jobs:
         run: cargo check
 
       - name: Build Tauri app
-        run: bun tauri build
+        uses: tauri-apps/tauri-action@v0
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: nami-v${{ github.run_number }}
+          releaseName: 'Nami Build #${{ github.run_number }}'
+          releaseBody: |
+            ## 🚀 Automated Build
+            
+            This is an automated build from the `${{ github.ref_name }}` branch.
+            
+            **Commit:** ${{ github.sha }}
+            
+            ## 📥 Downloads
+            
+            Download the installer for your platform below.
+            
+            ---
+            *Built automatically with GitHub Actions*
+          releaseDraft: false
+          prerelease: ${{ github.ref_name != 'main' }}
+          includeRelease: true
+          includeUpdaterJson: false
