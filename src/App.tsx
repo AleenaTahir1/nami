@@ -16,11 +16,19 @@ const AppLayout = () => {
   const location = useLocation();
   const showBlobs = ['/', '/create-account'].includes(location.pathname);
 
-  // Track user presence
-  usePresence();
+  // Track user presence (only if user exists)
+  try {
+    usePresence();
+  } catch (error) {
+    console.warn('Presence hook error:', error);
+  }
 
-  // Show welcome notification on first launch
-  useFirstLaunchNotification();
+  // Show welcome notification on first launch (wrapped in try-catch)
+  try {
+    useFirstLaunchNotification();
+  } catch (error) {
+    console.warn('First launch notification error:', error);
+  }
 
   return (
     <>
@@ -45,6 +53,10 @@ const AppLayout = () => {
 };
 
 function App() {
+  // Debug: Check if we can render at all
+  console.log('App component rendering...');
+  console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing');
+  
   return (
     <BrowserRouter>
       <AuthProvider>

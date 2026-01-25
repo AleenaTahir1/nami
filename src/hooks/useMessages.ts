@@ -200,11 +200,33 @@ export function useMessages(contactId: string | null) {
       return;
     }
 
+    // Create optimistic message for instant feedback
+    const optimisticMessage: MessageWithAttachments = {
+      id: `temp-${Date.now()}`,
+      sender_id: user.id,
+      receiver_id: contactId,
+      content: content.trim() || '📎 Attachment',
+      created_at: new Date().toISOString(),
+      edited_at: null,
+      deleted: false,
+      reply_to_id: null,
+      attachments: [],
+    };
+
     try {
       setSending(true);
       setError(null);
+      
+      // Add optimistic message immediately for better UX
+      setMessages((prev) => [...prev, optimisticMessage]);
+      
+      // Send the actual message
       const newMessage = await sendMessageApi(user.id, contactId, content, files);
-      setMessages((prev) => [...prev, newMessage]);
+      
+      // Replace optimistic message with real one
+      setMessages((prev) => 
+        prev.map(msg => msg.id === optimisticMessage.id ? newMessage : msg)
+      );
 
       // Immediately try to load status for the new message
       setTimeout(async () => {
@@ -220,13 +242,20 @@ export function useMessages(contactId: string | null) {
         } catch (err) {
           console.error('Error loading status for new message:', err);
         }
-      }, 500); // Wait a bit for the trigger to create the status entry
+      }, 500);
 
       // Immediate scroll for sent messages
       setTimeout(() => scrollToBottom(true), 50);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter(msg => msg.id !== optimisticMessage.id));
+      
+      const errorMsg = err instanceof Error ? err.message : 'Failed to send message';
+      setError(errorMsg);
       console.error('Error sending message:', err);
+      
+      // Show user-friendly error
+      alert(`Failed to send message: ${errorMsg}\n\nPlease check your connection and try again.`);
       throw err;
     } finally {
       setSending(false);

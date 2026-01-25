@@ -39,27 +39,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, username: string, displayName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username,
-          display_name: displayName,
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username,
+            display_name: displayName,
+          },
         },
-      },
-    });
+      });
 
-    return { error };
+      return { error };
+    } catch (err) {
+      // Handle network errors
+      const errorMessage = err instanceof Error ? err.message : 'Network error';
+      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+        return {
+          error: {
+            message: 'Unable to connect to server. Please check your internet connection and try again.',
+          } as AuthError,
+        };
+      }
+      return {
+        error: {
+          message: errorMessage,
+        } as AuthError,
+      };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    return { error };
+      return { error };
+    } catch (err) {
+      // Handle network errors
+      const errorMessage = err instanceof Error ? err.message : 'Network error';
+      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+        return {
+          error: {
+            message: 'Unable to connect to server. Please check your internet connection and try again.',
+          } as AuthError,
+        };
+      }
+      return {
+        error: {
+          message: errorMessage,
+        } as AuthError,
+      };
+    }
   };
 
   const signOut = async () => {

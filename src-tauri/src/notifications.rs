@@ -75,18 +75,19 @@ pub async fn play_notification_sound() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         use std::process::Command;
-        // Use Windows system notification sound (async spawn to avoid blocking)
-        let result = Command::new("powershell")
+        // Use Windows system notification sound silently (no window)
+        // Using output() runs the command in background without showing a window
+        let _ = Command::new("powershell")
             .args(&[
-                "-c",
-                "(New-Object Media.SoundPlayer 'C:\\Windows\\Media\\Windows Notify System Generic.wav').PlaySync()"
+                "-WindowStyle", "Hidden",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "[System.Media.SystemSounds]::Asterisk.Play()"
             ])
-            .spawn();
+            .output(); // output() doesn't show a window unlike spawn()
         
-        if let Err(e) = result {
-            eprintln!("Failed to play notification sound: {}", e);
-            return Err(format!("Failed to play sound: {}", e));
-        }
+        // Ignore errors - sound is not critical
     }
 
     #[cfg(target_os = "macos")]

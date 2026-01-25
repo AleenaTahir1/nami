@@ -1,113 +1,137 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import {
-    checkNotificationPermission,
-    requestNotificationPermission,
-    showNotification,
+import { useState, useEffect } from 'react';
+import { 
+  showNotification, 
+  isAppFocused, 
+  checkNotificationPermission,
+  requestNotificationPermission as requestPermission,
 } from '../lib/notifications';
-import type { NotificationPermission, NotificationSettings, NotificationOptions } from '../types/notification-types';
+import { useAuth } from '../contexts/AuthContext';
+import { subscribeToAllIncomingMessages } from '../lib/messages';
+import { getProfile, updateProfile } from '../lib/profiles';
 
+/**
+ * Notification settings hook for managing user notification preferences
+ */
 export function useNotifications() {
-    const [permission, setPermission] = useState<NotificationPermission>({
-        granted: false,
-        denied: false,
-        default: true,
-    });
-    const [settings, setSettings] = useState<NotificationSettings>({
-        enabled: true,
-        sound: true,
-        preview: true,
-    });
-    const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [permission, setPermission] = useState({ granted: false, denied: false, default: true });
+  const [settings, setSettings] = useState({
+    enabled: true,
+    sound: true,
+    preview: true,
+  });
+  const [loading, setLoading] = useState(true);
 
-    // Load permission status
-    useEffect(() => {
-        checkNotificationPermission().then(setPermission);
-    }, []);
-
-    // Load user settings from database
-    useEffect(() => {
-        loadSettings();
-    }, []);
-
+  useEffect(() => {
     const loadSettings = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+      if (!user) return;
 
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('notification_enabled, notification_sound, notification_preview')
-                .eq('user_id', user.id)
-                .single();
+      try {
+        // Check notification permission
+        const perm = await checkNotificationPermission();
+        setPermission(perm);
 
-            if (error) throw error;
-
-            if (data) {
-                setSettings({
-                    enabled: data.notification_enabled ?? true,
-                    sound: data.notification_sound ?? true,
-                    preview: data.notification_preview ?? true,
-                });
-            }
-        } catch (error) {
-            console.error('Failed to load notification settings:', error);
-        } finally {
-            setLoading(false);
+        // Load user notification settings from profile
+        const profile = await getProfile(user.id);
+        if (profile) {
+          setSettings({
+            enabled: profile.notification_enabled ?? true,
+            sound: profile.notification_sound ?? true,
+            preview: profile.notification_preview ?? true,
+          });
         }
+      } catch (error) {
+        console.error('Error loading notification settings:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const requestPermission = useCallback(async () => {
-        const granted = await requestNotificationPermission();
-        const newPermission = await checkNotificationPermission();
-        setPermission(newPermission);
-        return granted;
-    }, []);
+    loadSettings();
+  }, [user]);
 
-    const updateSettings = useCallback(async (newSettings: Partial<NotificationSettings>) => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+  const requestNotificationPermission = async () => {
+    const granted = await requestPermission();
+    setPermission({ granted, denied: !granted, default: false });
+    return granted;
+  };
 
-            const updatedSettings = { ...settings, ...newSettings };
+  const updateSettings = async (newSettings: Partial<typeof settings>) => {
+    if (!user) return;
 
-            const { error } = await supabase
-                .from('profiles')
-                .update({
-                    notification_enabled: updatedSettings.enabled,
-                    notification_sound: updatedSettings.sound,
-                    notification_preview: updatedSettings.preview,
-                })
-                .eq('user_id', user.id);
+    const updated = { ...settings, ...newSettings };
+    setSettings(updated);
 
-            if (error) throw error;
+    try {
+      await updateProfile(user.id, {
+        notification_enabled: updated.enabled,
+        notification_sound: updated.sound,
+        notification_preview: updated.preview,
+      });
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+    }
+  };
 
-            setSettings(updatedSettings);
-        } catch (error) {
-            console.error('Failed to update notification settings:', error);
-            throw error;
-        }
-    }, [settings]);
+  const notify = async (options: { title: string; body: string; sound?: boolean }) => {
+    if (!settings.enabled) return;
 
-    const notify = useCallback(async (options: NotificationOptions) => {
-        // Check if notifications are enabled
-        if (!settings.enabled || !permission.granted) {
-            return;
-        }
-
-        // Show notification with sound based on settings
+    try {
+      const focused = await isAppFocused();
+      if (!focused) {
         await showNotification({
-            ...options,
-            sound: settings.sound && options.sound !== false,
+          title: options.title,
+          body: settings.preview ? options.body : 'New message',
+          sound: settings.sound && (options.sound ?? true),
         });
-    }, [settings, permission]);
+      }
+    } catch (error) {
+      console.error('Error showing notification:', error);
+    }
+  };
 
-    return {
-        permission,
-        settings,
-        loading,
-        requestPermission,
-        updateSettings,
-        notify,
-    };
+  return {
+    permission,
+    settings,
+    loading,
+    requestPermission: requestNotificationPermission,
+    updateSettings,
+    notify,
+  };
+}
+
+/**
+ * Global message notifications hook
+ * Shows notifications for new messages when app is not focused
+ */
+export function useMessageNotifications() {
+  const { user } = useAuth();
+  const { notify, settings } = useNotifications();
+
+  useEffect(() => {
+    if (!user || !settings.enabled) return;
+
+    // Subscribe to all incoming messages for notifications
+    const unsubscribe = subscribeToAllIncomingMessages(user.id, async (message, senderProfile) => {
+      try {
+        // Don't notify for own messages
+        if (message.sender_id === user.id) return;
+
+        const senderName = senderProfile?.display_name || 'Someone';
+        const messagePreview = message.content.length > 50 
+          ? message.content.substring(0, 50) + '...' 
+          : message.content;
+        
+        await notify({
+          title: `New message from ${senderName}`,
+          body: messagePreview,
+          sound: true,
+        });
+      } catch (error) {
+        console.error('Error showing notification:', error);
+      }
+    });
+
+    return unsubscribe;
+  }, [user, notify, settings.enabled]);
 }

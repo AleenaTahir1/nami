@@ -11,38 +11,74 @@ export async function uploadAttachment(
   const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
   const storagePath = `${userId}/${messageId}/${timestamp}-${sanitizedFileName}`;
 
-  // Upload file to Supabase Storage
-  const { error: uploadError } = await supabase.storage
-    .from('attachments')
-    .upload(storagePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
+  // Upload file to Supabase Storage with retry logic
+  let uploadRetries = 3;
+  let uploadError: Error | null = null;
+
+  while (uploadRetries > 0) {
+    const { error } = await supabase.storage
+      .from('attachments')
+      .upload(storagePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (!error) {
+      uploadError = null;
+      break;
+    }
+
+    uploadError = error;
+    uploadRetries--;
+    
+    if (uploadRetries > 0) {
+      // Wait before retrying (exponential backoff: 1s, 2s, 3s)
+      await new Promise(resolve => setTimeout(resolve, (4 - uploadRetries) * 1000));
+    }
+  }
 
   if (uploadError) {
-    throw uploadError;
+    throw new Error(`Failed to upload file after 3 retries: ${uploadError.message}`);
   }
 
-  // Create attachment record in database
-  const { data, error: dbError } = await supabase
-    .from('attachments')
-    .insert({
-      message_id: messageId,
-      file_name: file.name,
-      file_type: file.type,
-      file_size: file.size,
-      storage_path: storagePath,
-    })
-    .select()
-    .single();
+  // Create attachment record in database with retry logic
+  let dbRetries = 3;
+  let dbError: Error | null = null;
+  let data: Attachment | null = null;
 
-  if (dbError) {
+  while (dbRetries > 0 && !data) {
+    const { data: result, error } = await supabase
+      .from('attachments')
+      .insert({
+        message_id: messageId,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        storage_path: storagePath,
+      })
+      .select()
+      .single();
+
+    if (!error && result) {
+      data = result as Attachment;
+      break;
+    }
+
+    dbError = error;
+    dbRetries--;
+    
+    if (dbRetries > 0) {
+      await new Promise(resolve => setTimeout(resolve, (4 - dbRetries) * 1000));
+    }
+  }
+
+  if (!data) {
     // If database insert fails, try to clean up the uploaded file
     await supabase.storage.from('attachments').remove([storagePath]);
-    throw dbError;
+    throw new Error(`Failed to create attachment record after 3 retries: ${dbError?.message}`);
   }
 
-  return data as Attachment;
+  return data;
 }
 
 export async function getAttachmentUrl(storagePath: string): Promise<string> {

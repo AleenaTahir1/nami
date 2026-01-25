@@ -61,22 +61,43 @@ export async function sendMessage(
   // Use default text if content is empty and there are files
   const messageContent = content.trim() || (files && files.length > 0 ? '📎 Attachment' : '');
 
-  // Create the message first
-  const { data, error } = await supabase
-    .from('messages')
-    .insert({
-      sender_id: senderId,
-      receiver_id: receiverId,
-      content: messageContent,
-    })
-    .select()
-    .single();
+  // Create the message first with retry logic
+  let retries = 3;
+  let lastError: Error | null = null;
+  let message: Message | null = null;
 
-  if (error) {
-    throw error;
+  while (retries > 0 && !message) {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: senderId,
+          receiver_id: receiverId,
+          content: messageContent,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      message = data as Message;
+      break;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error('Failed to send message');
+      retries--;
+      
+      if (retries > 0) {
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, (4 - retries) * 1000));
+      }
+    }
   }
 
-  const message = data as Message;
+  if (!message) {
+    throw lastError || new Error('Failed to send message after retries');
+  }
 
   // If there are files, upload them
   if (files && files.length > 0) {
@@ -197,24 +218,26 @@ export function subscribeToMessages(
 
 export function subscribeToAllIncomingMessages(
   userId: string,
-  onNewMessage: (message: MessageWithAttachments) => void
+  onNewMessage: (message: MessageWithAttachments, senderProfile?: any) => void
 ) {
   const handleNewMessage = async (message: Message) => {
-    // Fetch attachments/sender info if needed, but for notification just body is enough
-    // We might want to fetch sender name though.
-    // For now, let's just return the message and let the UI fetch details or use a simpler object.
-    // Actually, to show sender name, we need it.
-
-    // Fetch attachments
+    // Fetch attachments for the message
     const { data: attachments } = await supabase
       .from('attachments')
       .select('*')
       .eq('message_id', message.id);
 
+    // Fetch sender profile for notification
+    const { data: senderProfile } = await supabase
+      .from('profiles')
+      .select('display_name, username, avatar_url')
+      .eq('user_id', message.sender_id)
+      .single();
+
     onNewMessage({
       ...message,
       attachments: (attachments as Attachment[]) || [],
-    });
+    }, senderProfile);
   };
 
   const channel = supabase

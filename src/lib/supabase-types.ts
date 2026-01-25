@@ -119,6 +119,7 @@ export type Database = {
           edited_at: string | null
           id: string
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
@@ -128,6 +129,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
@@ -137,6 +139,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
         }
         Relationships: []
@@ -192,6 +195,27 @@ export type Database = {
         }
         Relationships: []
       }
+      typing_indicators: {
+        Row: {
+          contact_id: string
+          typing: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          contact_id: string
+          typing?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          contact_id?: string
+          typing?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           connection_id: string | null
@@ -222,35 +246,15 @@ export type Database = {
     }
     Functions: {
       get_conversation_messages: {
-        Args: { p_contact_id: string; p_limit?: number; p_user_id: string }
-        Returns: {
-          content: string
-          created_at: string
-          deleted: boolean
-          edited_at: string
-          id: string
-          receiver_id: string
-          sender_id: string
-        }[]
+        Args: { p_contact_id: string; p_limit?: number; p_user_id: string; p_before?: string | null }
+        Returns: any[]
       }
       get_user_contacts: {
         Args: { p_user_id: string }
-        Returns: {
-          avatar_url: string
-          bio: string
-          created_at: string
-          display_name: string
-          email: string
-          id: string
-          read_receipts_enabled: boolean
-          show_online_status: boolean
-          updated_at: string
-          user_id: string
-          username: string
-        }[]
+        Returns: any[]
       }
       update_user_presence: {
-        Args: { p_connection_id?: string; p_online: boolean; p_user_id: string }
+        Args: { p_online: boolean; p_user_id: string; p_connection_id?: string }
         Returns: undefined
       }
     }
@@ -271,6 +275,7 @@ export type Contact = Database['public']['Tables']['contacts']['Row'];
 export type MessageStatus = Database['public']['Tables']['message_status']['Row'];
 export type UserPresence = Database['public']['Tables']['user_presence']['Row'];
 export type Attachment = Database['public']['Tables']['attachments']['Row'];
+export type TypingIndicator = Database['public']['Tables']['typing_indicators']['Row'];
 export type ContactStatus = 'pending' | 'accepted' | 'blocked';
 
 export type ContactRequestWithProfile = Contact & {
@@ -279,4 +284,5 @@ export type ContactRequestWithProfile = Contact & {
 
 export type MessageWithStatus = Message & {
   status?: MessageStatus;
+  reply_to?: Message;
 };
